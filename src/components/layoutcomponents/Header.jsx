@@ -3,7 +3,32 @@ import * as S from "./style";
 import ProfilePopUp from "./ProfilePopUp";
 
 const Header = () => {
+  
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [keyword, setKeyword] = useState("")
+  const [isError, setIsError] = useState(false)
+  const [triedSubmit, setTriedSubmit]= useState(false) // 검색 시도여부
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    setTriedSubmit(true)
+
+    const searchKeyword = keyword.trim()
+
+    //  빈 검색어 아닐시 
+    if(!searchKeyword) {
+      setIsError(true) // 흔들림 다시 트리거용(같은 에러 연속 입력 대응)
+      setTimeout(() => setIsError(false), 400)
+      return
+    }
+
+    setIsError(false)
+    onSearch?.({ keyword: searchKeyword })
+
+  }
+  
+  const showError = triedSubmit && isError
+  
 
   return (
     <>
@@ -22,13 +47,29 @@ const Header = () => {
             </S.LogoArea>
 
             <S.SearchArea>
-              <S.SearchInput placeholder="검색어를 입력해주세요" aria-label="검색" />
-              <S.SearchBtn as="button" type="submit" aria-label="검색">
-                <S.SearchIcon src="/assets/icons/search.svg" alt="검색 아이콘" />
-              </S.SearchBtn>
+              <S.MainSearchWrap
+                as="form"
+                onSubmit={handleSubmit}
+                $error={showError}
+              >
+                <S.SearchInput
+                  value={keyword}
+                  onChange={(e) => {
+                    setKeyword(e.target.value)
+                    if(triedSubmit)
+                      setIsError(false)
+                  }}
+                  placeholder="검색어를 입력해주세요"
+                  aria-label="검색"
+                />
+                <S.SearchBtn as="button" type="submit" aria-label="검색">
+                  <S.SearchIcon
+                    src="/assets/icons/search.svg"
+                    alt="검색 아이콘"
+                  />
+                </S.SearchBtn>
+              </S.MainSearchWrap>
             </S.SearchArea>
-
-            
           </S.TopRow>
 
           <S.BottomRow>
@@ -54,10 +95,7 @@ const Header = () => {
                 type="button"
                 onClick={() => setIsSidebarOpen(true)}
               >
-                <S.RightIcon 
-                  src="/assets/icons/profile.svg"
-                  aria-hidden 
-                />
+                <S.RightIcon src="/assets/icons/profile.svg" aria-hidden />
                 <S.RightText>프로필</S.RightText>
               </S.ProfileButton>
               <ProfilePopUp

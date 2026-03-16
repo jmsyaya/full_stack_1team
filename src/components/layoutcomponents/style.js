@@ -14,7 +14,7 @@ export const ScrollButton = styled.button`
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  border: 1px solid  ${({ theme }) => theme.PALLETE.gray[300]};
+  border: 1px solid ${({ theme }) => theme.PALLETE.gray[300]};
 
   background-color: ${({ theme }) => theme.PALLETE.white};
 
@@ -32,7 +32,6 @@ export const ScrollButton = styled.button`
 `;
 
 /* ================= Header styles ================= */
-
 
 export const HeaderOuter = styled.header`
   width: 100%;
@@ -83,13 +82,30 @@ export const LogoText = styled.span`
 
 export const SearchArea = styled.div`
   flex: 1;
-  max-width: 720px;
+  /* max-width: 720px; */
+  max-width: 485px;
   height: 44px;
   border: 2px solid #ff3b30;
   border-radius: 10px;
   display: flex;
   align-items: center;
   padding: 0 10px 0 14px;
+`;
+
+export const MainSearchWrap = styled.div`
+  position: relative;
+  width: 1028px;
+  height: 40px;
+
+  ${({ $error }) =>
+    $error &&
+    css`
+      animation: ${shake} 0.35s ease;
+      border: 2px solid
+        ${({ theme, $error }) =>
+          $error ? theme.PALLETE.error : theme.PALLETE.gray[200]};
+      border-radius: 5px;
+    `}
 `;
 
 export const SearchInput = styled.input`
@@ -169,7 +185,7 @@ export const ProfileTextIcon = styled.span`
 
 export const RightText = styled.span`
   ${FONT_STYLE.PRETENDARD.H8_REGULAR};
-  font-weight: 600; 
+  font-weight: 600;
 `;
 
 export const BottomRow = styled.div`
@@ -200,7 +216,7 @@ export const NavItem = styled(Link)`
     content: "";
     position: absolute;
     left: 0;
-    bottom: -2px;   /* underline margin */
+    bottom: -2px; /* underline margin */
     width: 100%;
     height: 1px;
     background: transparent;
@@ -416,7 +432,9 @@ export const SidebarContainer = styled.div`
   /* [핵심] isOpen 상태에 따라 위치를 이동시킴 */
   transform: ${({ isOpen }) => (isOpen ? "translateX(0)" : "translateX(100%)")};
   visibility: ${({ isOpen }) => (isOpen ? "visible" : "hidden")};
-  transition: transform 0.3s ease-in-out, visibility 0.3s;
+  transition:
+    transform 0.3s ease-in-out,
+    visibility 0.3s;
 `;
 
 export const Backdrop = styled.div`
@@ -484,11 +502,11 @@ export const ProfileUserCreateAt = styled.p`
 export const ProfileContainer = styled.div`
   padding: 20px 0 20px 0;
   border-bottom: 1px solid ${({ theme }) => theme.PALLETE.gray[300]};
-  display:flex;
-  flex-direction:column;
+  display: flex;
+  flex-direction: column;
   gap: 5px;
 `;
 
 export const ChangeButton = styled.button`
-text-align:left;
-`
+  text-align: left;
+`;
