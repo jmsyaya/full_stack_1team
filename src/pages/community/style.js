@@ -60,39 +60,58 @@ export const SearchInput = styled.input`
   /* 아이콘 자리 확보 */
   padding: 0 44px 0 16px;
 
-  border-radius: 5px;
-  border: 1px solid transparent;
-  background-color: ${({ theme }) => theme.PALLETE.gray[50]};
+  /* border-radius: 5px; */
+  /* border: 1px solid transparent; */
+  /* background-color: ${({ theme }) => theme.PALLETE.gray[50]}; */
+  border: none;
+  outline: none;
+  background: transparent;
 
   ${FONT_STYLE.PRETENDARD.H7_REGULAR};
-
   &::placeholder {
     color: ${({ theme }) => theme.PALLETE.gray[800]};
   }
 
-  &:focus {
+  /* &:focus {
     outline: none;
     border-color: ${({ theme }) => theme.PALLETE.primary.main};
     background-color: ${({ theme }) => theme.PALLETE.background.white};
-  }
+  } */
 `;
 
 // 검색 input + 아이콘 감싸는 레퍼
-export const SearchWrap = styled.div`
+export const SearchWrap = styled.form`
   position: relative;
   width: 1028px;
   height: 40px;
+  box-sizing: border-box;
+  /* 안쪽 input/background가 바깥 radius를 침범하지 못하게 막아줌. */
+  overflow: hidden;
 
-  ${({ $error }) =>
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background-color: ${({ theme }) => theme.PALLETE.gray[50]};
+
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    box-shadow 0.15s ease;
+
+  // input에 포커스가 있든, 버튼을 눌렀든, 검색창 전체를 하나의 박스로 다룸.
+  &:focus-within {
+    border-color: ${({ theme }) => theme.PALLETE.primary.main};
+    background-color: ${({ theme }) => theme.PALLETE.background.white};
+  }
+
+  ${({ $error, theme }) =>
     $error &&
     css`
       animation: ${shake} 0.35s ease;
-      border: 2px solid
-        ${({ theme, $error }) =>
-          $error ? theme.PALLETE.error : theme.PALLETE.gray[200]};
-      border-radius: 5px;
+      border-color: ${theme.PALLETE.error};
+      background-color: ${theme.PALLETE.background.white};
     `}
 `;
+
 export const SearchButton = styled.button`
   position: absolute;
   right: 14px;

@@ -71,7 +71,7 @@ export const CommunityHeader = ({
       <S.Title>{title}</S.Title>
 
       <S.SearchRow>
-        <S.SearchWrap as="form" onSubmit={handleSubmit} $error={showError}>
+        <S.SearchWrap onSubmit={handleSubmit} $error={showError}>
           <S.SearchInput
             value={keyword}
             onChange={(e) => {

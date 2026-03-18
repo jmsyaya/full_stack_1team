@@ -344,12 +344,38 @@ const CommunityMain = () => {
     [requireLogin],
   );
 
+  // keyword 를 URL에서 읽어서 searchState에 동기화
+  // 이렇게 하면 주소가 바뀔 때마다:
+  // /communitymain?keyword=김치
+  // searchState.keyword = "김치"
+  // 로 연결돼서 FeedGrid 필터링이 돌아감
+  useEffect(() => {
+    const keywordFromUrl = searchParams.get("keyword") || ""
+    const sortFromUrl = searchParams.get("sort") || "latest"
+
+    setSearchState((prev) => {
+      if (
+        prev.keyword === keywordFromUrl && 
+        prev.sort === sortFromUrl
+      ) {
+        return prev
+      }
+      return {
+        ...prev,
+        keyword: keywordFromUrl,
+        sort: sortFromUrl
+      }
+    })
+  }, [searchParams]) 
+
   return (
     <S.Page>
       <div id="community-top" />
 
       <S.Container>
         <CommunityHeader
+          initialKeyword={searchState.keyword}
+          initialSort={searchState.sort}
           onSearch={({ keyword, sort }) => {
             setSearchState({ keyword, sort });
             window.scrollTo({ top: 0, behavior: "smooth" });

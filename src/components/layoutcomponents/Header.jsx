@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import * as S from "./style";
 import ProfilePopUp from "./ProfilePopUp";
 
-const Header = () => {
+const Header = ({onSearch}) => {
   
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [keyword, setKeyword] = useState("")
@@ -31,7 +31,7 @@ const Header = () => {
   
 
   return (
-    <>
+    
       <S.HeaderOuter>
         <S.HeaderInner>
           <S.TopRow>
@@ -48,7 +48,6 @@ const Header = () => {
 
             <S.SearchArea>
               <S.MainSearchWrap
-                as="form"
                 onSubmit={handleSubmit}
                 $error={showError}
               >
@@ -62,7 +61,7 @@ const Header = () => {
                   placeholder="검색어를 입력해주세요"
                   aria-label="검색"
                 />
-                <S.SearchBtn as="button" type="submit" aria-label="검색">
+                <S.SearchBtn type="submit" aria-label="검색">
                   <S.SearchIcon
                     src="/assets/icons/search.svg"
                     alt="검색 아이콘"
@@ -98,6 +97,7 @@ const Header = () => {
                 <S.RightIcon src="/assets/icons/profile.svg" aria-hidden />
                 <S.RightText>프로필</S.RightText>
               </S.ProfileButton>
+              
               <ProfilePopUp
                 isOpen={isSidebarOpen}
                 onClose={() => setIsSidebarOpen(false)}
@@ -106,7 +106,7 @@ const Header = () => {
           </S.BottomRow>
         </S.HeaderInner>
       </S.HeaderOuter>
-    </>
+  
   );
 };
 
