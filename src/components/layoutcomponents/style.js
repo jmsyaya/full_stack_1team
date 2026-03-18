@@ -1,6 +1,15 @@
-import styled from "styled-components";
+import styled, { css, keyframes } from "styled-components";
 import { Link } from "react-router-dom";
 import { flexBetweenRow, flexCenter, FONT_STYLE } from "../../styles/common";
+
+// 검색창 아무것도 입력 안하고 검색하면 나오는 효과
+export const shake = keyframes`
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  50% { transform: translateX(4px); }
+  75% { transform: translateX(-4px); }
+  100% { transform: translateX(0); }
+`;
 
 // 플로팅 액션 섹션
 export const FloatingWrapper = styled.div`
@@ -82,18 +91,35 @@ export const LogoText = styled.span`
 
 export const SearchArea = styled.div`
   flex: 1;
-  /* max-width: 720px; */
   max-width: 485px;
-  height: 44px;
+  /* height: 44px;
   border: 2px solid #ff3b30;
   border-radius: 10px;
   display: flex;
   align-items: center;
-  padding: 0 10px 0 14px;
+  padding: 0 10px 0 14px; */
 `;
 
-export const MainSearchWrap = styled.div`
-  position: relative;
+export const MainSearchWrap = styled.form`
+width: 100%;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px 0 14px;
+  box-sizing: border-box;
+
+  border: 2px solid
+    ${({ theme, $error }) =>
+      $error ? theme.PALLETE.error : "#ff3b30"};
+  border-radius: 5px;
+  background: #fff;
+
+  ${({ $error }) =>
+    $error &&
+    css`
+      animation: ${shake} 0.35s ease;
+    `}
+  /* position: relative;
   width: 1028px;
   height: 40px;
 
@@ -105,7 +131,7 @@ export const MainSearchWrap = styled.div`
         ${({ theme, $error }) =>
           $error ? theme.PALLETE.error : theme.PALLETE.gray[200]};
       border-radius: 5px;
-    `}
+    `} */
 `;
 
 export const SearchInput = styled.input`
@@ -430,8 +456,8 @@ export const SidebarContainer = styled.div`
   padding: 35px;
 
   /* [핵심] isOpen 상태에 따라 위치를 이동시킴 */
-  transform: ${({ isOpen }) => (isOpen ? "translateX(0)" : "translateX(100%)")};
-  visibility: ${({ isOpen }) => (isOpen ? "visible" : "hidden")};
+  transform: ${({ $isOpen }) => ($isOpen ? "translateX(0)" : "translateX(100%)")};
+  visibility: ${({ $isOpen }) => ($isOpen ? "visible" : "hidden")};
   transition:
     transform 0.3s ease-in-out,
     visibility 0.3s;
@@ -445,7 +471,7 @@ export const Backdrop = styled.div`
   height: 100vh;
   background-color: rgba(81, 81, 81, 0.44);
   z-index: 999;
-  display: ${({ isOpen }) => (isOpen ? "block" : "none")};
+  display: ${({ $isOpen }) => ($isOpen ? "block" : "none")};
 `;
 
 export const CloseButton = styled.button`

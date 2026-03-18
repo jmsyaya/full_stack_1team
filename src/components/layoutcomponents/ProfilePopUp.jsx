@@ -13,14 +13,14 @@ const ProfilePopUp = ({ isOpen, onClose }) => {
 
   return (
     <div>
-      <S.Backdrop isOpen={isOpen} onClick={onClose} />
+      <S.Backdrop $isOpen={isOpen} onClick={onClose} />
 
       {/* 사이드바 내용 */}
-      <S.SidebarContainer isOpen={isOpen}>
+      <S.SidebarContainer $isOpen={isOpen}>
         <S.ProfileImgWrap>
-          <img src="\assets\images\pinggu.png" alt="프로필 이미지" />
+          <img src="/assets/images/pinggu.png" alt="프로필 이미지" />
           <S.CloseButton onClick={onClose}>
-            <img src="\assets\icons\close.svg" alt="닫기 버튼" />
+            <img src="/assets/icons/close.svg" alt="닫기 버튼" />
           </S.CloseButton>
         </S.ProfileImgWrap>
         <S.ProfileContainer>
