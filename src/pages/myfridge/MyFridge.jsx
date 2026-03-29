@@ -1,11 +1,11 @@
-import React, { useMemo, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import AddIngredientModal from "../../components/myfridgecomponents/AddIngredientModal";
 import IngredientList from "../../components/myfridgecomponents/IngredientList";
 import AddIngredientDetailModal from "../../components/myfridgecomponents/AddIngredientDetailModal";
 import S from "./style";
 
-/* ✅ 카테고리 → 아이콘 매핑 */
+/* 카테고리 → 아이콘 */
 const CATEGORY_ICONS = {
   채소: "🥕",
   육류: "🥩",
@@ -15,15 +15,7 @@ const CATEGORY_ICONS = {
   기타: "🥚",
 };
 
-const CATEGORIES = [
-  "전체",
-  "채소",
-  "육류",
-  "해산물",
-  "유제품",
-  "가공품",
-  "기타",
-];
+const CATEGORIES = ["전체", "채소", "육류", "해산물", "유제품", "가공품", "기타"];
 
 const MyFridge = () => {
   const [ingredients, setIngredients] = useState([]);
@@ -38,31 +30,111 @@ const MyFridge = () => {
   const [editItem, setEditItem] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
 
+  const memberId = 1; // TODO: JWT로 교체
+
+  /* ------------------ 🔥 서버에서 데이터 가져오기 ------------------ */
+  const fetchFridge = async () => {
+    const res = await fetch(`http://localhost:10000/fridge/${memberId}`);
+    const data = await res.json();
+
+    // 백엔드 group 구조 → 프론트 구조로 변환
+    const mapped = data.flatMap((item) =>
+      item.items.map((sub) => ({
+        fridgeId: sub.id,
+        name: item.ingredientName,
+        category: item.category,
+        icon: CATEGORY_ICONS[item.category] || "📦",
+        quantity: sub.quantity,
+        expiredAt: sub.expireDate
+          ? sub.expireDate.split("T")[0]
+          : "",
+        createdAt: sub.expireDate,
+      }))
+    );
+
+    setIngredients(mapped);
+  };
+
+  useEffect(() => {
+    fetchFridge();
+  }, []);
+
+  /* ------------------ 선택 토글 ------------------ */
   const toggleSelected = (fridgeId) => {
     setSelectedIds((prev) =>
       prev.includes(fridgeId)
         ? prev.filter((v) => v !== fridgeId)
-        : [...prev, fridgeId],
+        : [...prev, fridgeId]
     );
   };
 
-  /* ✅ 재료 추가 (아이콘 자동 포함) */
-  const handleAddIngredients = (newItems) => {
-    const now = new Date();
+  /* ------------------ 🔥 추가 ------------------ */
+  const addIngredient = async (items) => {
+    const item = items[0];
 
-    const completed = newItems.map((x) => ({
-      fridgeId: Date.now() + Math.random(),
-      name: x.name,
-      category: x.category,
-      icon: CATEGORY_ICONS[x.category] || "📦",
-      quantity: x.quantity === "" ? 0 : Number(x.quantity),
-      expiredAt: x.expiredAt || "",
-      createdAt: now.toISOString(),
-    }));
+    await fetch("http://localhost:10000/fridge", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        memberId,
+        ingredientName: item.name,
+        category: item.category,
+        quantity: Number(item.quantity),
+        unit: "ea",
+        expireDate: item.expiredAt,
+      }),
+    });
 
-    setIngredients((prev) => [...prev, ...completed]);
+    fetchFridge();
   };
 
+  /* ------------------ 🔥 삭제 ------------------ */
+  const deleteItem = async (id) => {
+    await fetch(`http://localhost:10000/fridge/${id}`, {
+      method: "DELETE",
+    });
+  };
+
+  const confirmDelete = async () => {
+    await Promise.all(selectedIds.map((id) => deleteItem(id)));
+
+    setSelectedIds([]);
+    setIsDeleteMode(false);
+    fetchFridge();
+  };
+
+  /* ------------------ 🔥 수정 ------------------ */
+const updateItem = async (item) => {
+  try {
+    console.log("수정 요청:", item);
+
+    const body = {
+      quantity: Number(item.quantity),
+      unit: "ea"
+    };
+
+    // 🔥 날짜 있을 때만 넣기
+    if (item.expiredAt) {
+      body.expireDate = item.expiredAt;
+    }
+
+    await fetch(`http://localhost:10000/fridge/${item.fridgeId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body)
+    });
+
+    fetchFridge();
+  } catch (e) {
+    console.error("수정 에러:", e);
+  }
+};
+
+  /* ------------------ 필터 ------------------ */
   const filteredIngredients = useMemo(() => {
     if (activeCategory === "전체") return ingredients;
     return ingredients.filter((item) => item.category === activeCategory);
@@ -75,14 +147,6 @@ const MyFridge = () => {
     }
     return arr;
   }, [filteredIngredients, sortType]);
-
-  const confirmDelete = () => {
-    setIngredients((prev) =>
-      prev.filter((item) => !selectedIds.includes(item.fridgeId)),
-    );
-    setSelectedIds([]);
-    setIsDeleteMode(false);
-  };
 
   return (
     <>
@@ -172,7 +236,7 @@ const MyFridge = () => {
         {isAddOpen && (
           <AddIngredientDetailModal
             onClose={() => setIsAddOpen(false)}
-            onSubmit={handleAddIngredients}
+            onSubmit={addIngredient}
           />
         )}
 
@@ -188,13 +252,12 @@ const MyFridge = () => {
                     type="number"
                     min="0"
                     value={editItem.quantity}
-                    onChange={(e) => {
-                      const value = Number(e.target.value);
+                    onChange={(e) =>
                       setEditItem({
                         ...editItem,
-                        quantity: value < 0 ? 0 : value,
-                      });
-                    }}
+                        quantity: Number(e.target.value),
+                      })
+                    }
                   />
                 </S.SelectedRow>
 
@@ -215,11 +278,7 @@ const MyFridge = () => {
                 <S.ModalFooter>
                   <S.AddButton
                     onClick={() => {
-                      setIngredients((prev) =>
-                        prev.map((v) =>
-                          v.fridgeId === editItem.fridgeId ? editItem : v,
-                        ),
-                      );
+                      updateItem(editItem);
                       setEditItem(null);
                     }}
                   >
