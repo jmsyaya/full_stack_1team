@@ -15,7 +15,15 @@ const CATEGORY_ICONS = {
   기타: "🥚",
 };
 
-const CATEGORIES = ["전체", "채소", "육류", "해산물", "유제품", "가공품", "기타"];
+const CATEGORIES = [
+  "전체",
+  "채소",
+  "육류",
+  "해산물",
+  "유제품",
+  "가공품",
+  "기타",
+];
 
 const MyFridge = () => {
   const [ingredients, setIngredients] = useState([]);
@@ -30,12 +38,18 @@ const MyFridge = () => {
   const [editItem, setEditItem] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
 
-  const memberId = 1; // TODO: JWT로 교체
-
-  /* ------------------ 🔥 서버에서 데이터 가져오기 ------------------ */
+  /* ------------------ 서버에서 데이터 가져오기 ------------------ */
   const fetchFridge = async () => {
-    const res = await fetch(`http://localhost:10000/fridge/${memberId}`);
+    const res = await fetch("http://localhost:10000/fridge", {
+      credentials: "include",
+    });
     const data = await res.json();
+
+    if (!Array.isArray(data)) {
+      console.error("서버 에러:", data);
+      return;
+    }
+    console.log("응답 데이터:", data);
 
     // 백엔드 group 구조 → 프론트 구조로 변환
     const mapped = data.flatMap((item) =>
@@ -45,11 +59,9 @@ const MyFridge = () => {
         category: item.category,
         icon: CATEGORY_ICONS[item.category] || "📦",
         quantity: sub.quantity,
-        expiredAt: sub.expireDate
-          ? sub.expireDate.split("T")[0]
-          : "",
+        expiredAt: sub.expireDate ? sub.expireDate.split("T")[0] : "",
         createdAt: sub.expireDate,
-      }))
+      })),
     );
 
     setIngredients(mapped);
@@ -64,7 +76,7 @@ const MyFridge = () => {
     setSelectedIds((prev) =>
       prev.includes(fridgeId)
         ? prev.filter((v) => v !== fridgeId)
-        : [...prev, fridgeId]
+        : [...prev, fridgeId],
     );
   };
 
@@ -77,8 +89,8 @@ const MyFridge = () => {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify({
-        memberId,
         ingredientName: item.name,
         category: item.category,
         quantity: Number(item.quantity),
@@ -94,6 +106,7 @@ const MyFridge = () => {
   const deleteItem = async (id) => {
     await fetch(`http://localhost:10000/fridge/${id}`, {
       method: "DELETE",
+      credentials: "include",
     });
   };
 
@@ -106,33 +119,34 @@ const MyFridge = () => {
   };
 
   /* ------------------ 🔥 수정 ------------------ */
-const updateItem = async (item) => {
-  try {
-    console.log("수정 요청:", item);
+  const updateItem = async (item) => {
+    try {
+      console.log("수정 요청:", item);
 
-    const body = {
-      quantity: Number(item.quantity),
-      unit: "ea"
-    };
+      const body = {
+        quantity: Number(item.quantity),
+        unit: "ea",
+      };
 
-    // 🔥 날짜 있을 때만 넣기
-    if (item.expiredAt) {
-      body.expireDate = item.expiredAt;
+      // 🔥 날짜 있을 때만 넣기
+      if (item.expiredAt) {
+        body.expireDate = item.expiredAt;
+      }
+
+      await fetch(`http://localhost:10000/fridge/${item.fridgeId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(body),
+      });
+
+      fetchFridge();
+    } catch (e) {
+      console.error("수정 에러:", e);
     }
-
-    await fetch(`http://localhost:10000/fridge/${item.fridgeId}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(body)
-    });
-
-    fetchFridge();
-  } catch (e) {
-    console.error("수정 에러:", e);
-  }
-};
+  };
 
   /* ------------------ 필터 ------------------ */
   const filteredIngredients = useMemo(() => {
