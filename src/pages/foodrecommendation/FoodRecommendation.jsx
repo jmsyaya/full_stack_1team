@@ -13,7 +13,9 @@ const FoodRecommendation = () => {
       try {
         setLoading(true);
 
-        const res = await fetch("http://localhost:10000/fridge/recommend/1");
+        const res = await fetch("http://localhost:10000/fridge/recommend", {
+          credentials: "include",
+        });
         const data = await res.json();
 
         // UI 유지하면서 데이터만 교체
@@ -30,7 +32,7 @@ const FoodRecommendation = () => {
 
   const handleClickCard = (item) => {
     navigate(`/foodrecommendation/recommendRecipe/${item.id}`, {
-      state: { recipe: item }, 
+      state: { recipe: item },
     });
   };
 
