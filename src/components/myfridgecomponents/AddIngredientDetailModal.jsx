@@ -30,7 +30,7 @@ const AddIngredientDetailModal = ({ onClose, onSubmit }) => {
     <S.ModalOverlay>
       <S.ModalContent>
         <S.ModalBody>
-          <h3>재료 추가</h3>
+          <S.ModalTitle>재료 추가</S.ModalTitle>
 
           <S.SelectedRow>
             <div>재료명</div>
