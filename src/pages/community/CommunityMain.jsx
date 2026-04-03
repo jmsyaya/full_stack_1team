@@ -13,70 +13,89 @@ import LoginRequireModal from "../../components/layoutcomponents/loginrequiremod
 
 import usePostStore from "../../store/postStore";
 import useAuthStore from "../../store/authStore";
+import { createPostLike, deletePostLike } from "../../api/postLike";
 
 const CommunityMain = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  
+
   const { posts, fetchPosts } = usePostStore();
-  // useEffect(() => {
-  //   fetchPosts();
-  //   console.log("posts 원본:", posts);
-  // console.log("displayItems:", displayItems);
-  // }, [fetchPosts])
 
-  const { user, isAuthenticated } = useAuthStore();
+  // authStore 현재 상태
+  const authState = useAuthStore();
 
-  //  로그인 유저 닉네임(없으면 게스트)
-  const meNickname = user?.nickname || "";
+  // localStorage fallback
+  const persistedAuth = useMemo(() => {
+    try {
+      return JSON.parse(localStorage.getItem("auth-storage") || "{}");
+    } catch (error) {
+      console.error("auth-storage 파싱 실패:", error);
+      return {};
+    }
+  }, []);
 
-  //  로그인 요구 모달
+  const persistedMember = persistedAuth?.state?.member ?? null;
+  const persistedUser = persistedAuth?.state?.user ?? null;
+
+  // 로그인 담당 파트가 user로 저장하든 member로 저장하든 둘 다 대응
+  const currentUser =
+    authState.user ?? persistedUser ?? persistedMember ?? null;
+
+  const isLoggedIn = authState.isAuthenticated || !!currentUser;
+
+  // 로그인 유저 닉네임(없으면 게스트)
+  const meNickname = currentUser?.memberName || "";
+
+  // 로그인 요구 모달
   const [loginModalOpen, setLoginModalOpen] = useState(false);
 
-  //  "로그인 필요 행동" 공통 래퍼
+  // "로그인 필요 행동" 공통 래퍼
   const requireLogin = useCallback(
     (action) => {
-      if (!isAuthenticated || !user) {
+      if (!currentUser) {
         setLoginModalOpen(true);
         return false;
       }
       action?.();
       return true;
     },
-    [isAuthenticated, user],
+    [currentUser]
   );
 
   // 게시글 fetch
   useEffect(() => {
-    fetchPosts()
-  }, [fetchPosts])
+    fetchPosts();
+  }, [fetchPosts]);
 
   const normalizeFromStore = useCallback((raw) => {
     const nicknameRaw =
-      raw?.member?.memberName ?? 
-      raw?.author?.nickName ?? 
-      raw?.nickName ?? 
-      raw?.authorNickName ?? 
+      raw?.member?.memberName ??
+      raw?.author?.nickName ??
+      raw?.nickName ??
+      raw?.authorNickName ??
       "";
-    
+
     return {
       id: raw?.id ?? 0,
 
       // 카드 상단 제목 = 요리명
-      recipeName: 
-        raw?.recipe?.recipeTitle ?? 
-        raw?.recipeTitle ??        raw?.recipeName ?? 
-        raw?.postTitle ?? 
+      recipeName:
+        raw?.recipe?.recipeTitle ??
+        raw?.recipeTitle ??
+        raw?.recipeName ??
+        raw?.postTitle ??
         raw?.title ??
         "",
       nickname: String(nicknameRaw).trim() || "익명",
       level: raw?.author?.level ?? raw?.level ?? raw?.authorLevel ?? 1,
-      images: raw?.images?.length > 0
-        ? raw.images
-        : raw?.imageUrl
-        ? [raw.imageUrl]
-        : [] ,
+      images:
+        raw?.images?.length > 0
+          ? raw.images
+          : raw?.imageUrl
+          ? [raw.imageUrl]
+          : [],
       likes: raw?.likes ?? raw?.likeCount ?? 0,
+      isLiked: raw?.isLiked ?? false,
       content: raw?.postContent ?? raw?.content ?? raw?.desc ?? "",
       ingredients: Array.isArray(raw?.ingredients) ? raw.ingredients : [],
       createdAt: raw?.createdAt ?? "",
@@ -87,16 +106,8 @@ const CommunityMain = () => {
 
   const allItems = useMemo(
     () => (posts ?? []).map(normalizeFromStore),
-    [posts, normalizeFromStore],
-  ); // postStore에 어떤 형태로 저장해도 CommunityMain이 “흡수/정규화”해서 FeedGrid/PostCard에는 항상 item.nickname이 정상으로 들어감
-
-  useEffect(() => {
-    console.log("posts 원본:", posts)
-  }, [posts])
-
-  useEffect(() => {
-    console.log("allItems:", allItems)
-  }, [allItems])
+    [posts, normalizeFromStore]
+  );
 
   const buildPostForModal = useCallback((item) => {
     return {
@@ -124,6 +135,7 @@ const CommunityMain = () => {
     keyword: "",
     sort: "latest",
   });
+
   // 간단 텍스트 검색 (레시피명/본문/재료/닉네임)
   const matchesKeyword = useCallback((item, keyword) => {
     const q = keyword.trim().toLowerCase();
@@ -142,33 +154,43 @@ const CommunityMain = () => {
     return hay.includes(q);
   }, []);
 
+  const [likedMap, setLikedMap] = useState({});
+
   // 정렬 + 필터된 결과
   const displayItems = useMemo(() => {
-    const filtered = allItems.filter((it) =>
-      matchesKeyword(it, searchState.keyword),
+    const merged = allItems.map((item) => {
+      const likedState = likedMap[item.id];
+
+      if (!likedState) return item;
+
+      return {
+        ...item,
+        likes: likedState.likeCount,
+        isLiked: likedState.liked,
+      };
+    });
+
+    const filtered = merged.filter((it) =>
+      matchesKeyword(it, searchState.keyword)
     );
 
-    // 정렬: createdAt이 "방금 전" 같은 문자열이면 정확한 최신정렬이 어려워서
-    // 일단 likes 기반 인기순만 확실하게 하고, 최신순은 원본 순서 유지(or id desc)로 처리 추천
     const sorted = [...filtered];
 
     if (searchState.sort === "popular") {
       sorted.sort((a, b) => (b.likes ?? 0) - (a.likes ?? 0));
     } else {
-      // latest: 원본이 최신순이라고 가정하거나, id가 증가형이면 id desc로
       sorted.sort((a, b) => (b.id ?? 0) - (a.id ?? 0));
     }
 
     return sorted;
-  }, [allItems, matchesKeyword, searchState]);
+  }, [allItems, likedMap, matchesKeyword, searchState]);
 
-  //  카드 클릭: 내 글이면 MyPostModal / 아니면 CommunityPostModal
+  // 카드 클릭: 내 글이면 MyPostModal / 아니면 CommunityPostModal
   const handleOpenAnyPostModal = useCallback(
     (item) => {
       const post = buildPostForModal(item);
       const isMine = !!meNickname && post.author?.nickname === meNickname;
 
-      //  "내 글" 모달은 편집 기능이 있으니 로그인 필요로 묶는게 안전
       if (isMine) {
         requireLogin(() => {
           setSelectedPost(post);
@@ -178,12 +200,11 @@ const CommunityMain = () => {
         return;
       }
 
-      // 다른 사람 글 모달은 누구나 열람 가능
       setSelectedPost(post);
       setIsOtherPostModalOpen(true);
       setIsMyPostModalOpen(false);
     },
-    [buildPostForModal, meNickname, requireLogin],
+    [buildPostForModal, meNickname, requireLogin]
   );
 
   const handleCloseModals = useCallback(() => {
@@ -192,7 +213,7 @@ const CommunityMain = () => {
     setSelectedPost(null);
   }, []);
 
-  //  쿼리스트링으로 모달 열기(postId) - 테스트용
+  // 쿼리스트링으로 모달 열기(postId) - 테스트용
   useEffect(() => {
     const postId = searchParams.get("postId");
     if (!postId) return;
@@ -213,7 +234,7 @@ const CommunityMain = () => {
       comments: [],
     };
 
-    handleOpenAnyPostModal(item); //  post 말고 item을 넣어야 함
+    handleOpenAnyPostModal(item);
   }, [searchParams, meNickname, handleOpenAnyPostModal]);
 
   // ===== 댓글 등록 (로그인 필요) =====
@@ -234,10 +255,10 @@ const CommunityMain = () => {
         });
       });
     },
-    [requireLogin, meNickname],
+    [requireLogin, meNickname]
   );
 
-  // ===== 댓글 수정/삭제 (로그인 필요 + 내 댓글만 가능이지만 모달에서 이미 mine 체크) =====
+  // ===== 댓글 수정/삭제 =====
   const handleEditComment = useCallback(
     (comment, nextTextFromModal) => {
       requireLogin(() => {
@@ -253,13 +274,13 @@ const CommunityMain = () => {
         setSelectedPost((prev) => {
           if (!prev) return prev;
           const nextComments = (prev.comments ?? []).map((c) =>
-            c === comment ? { ...c, text: trimmed, time: "방금 전" } : c,
+            c === comment ? { ...c, text: trimmed, time: "방금 전" } : c
           );
           return { ...prev, comments: nextComments };
         });
       });
     },
-    [requireLogin],
+    [requireLogin]
   );
 
   const handleDeleteComment = useCallback(
@@ -270,17 +291,15 @@ const CommunityMain = () => {
 
         setSelectedPost((prev) => {
           if (!prev) return prev;
-          const nextComments = (prev.comments ?? []).filter(
-            (c) => c !== comment,
-          );
+          const nextComments = (prev.comments ?? []).filter((c) => c !== comment);
           return { ...prev, comments: nextComments };
         });
       });
     },
-    [requireLogin],
+    [requireLogin]
   );
 
-  // ===== 내 글 전용 액션들은 로그인 필요 =====
+  // ===== 내 글 전용 액션들 =====
   const handleEditPost = useCallback(
     (postId, patch) => {
       requireLogin(() => {
@@ -295,7 +314,7 @@ const CommunityMain = () => {
         });
       });
     },
-    [requireLogin],
+    [requireLogin]
   );
 
   const handleDeletePost = useCallback(
@@ -305,7 +324,7 @@ const CommunityMain = () => {
         handleCloseModals();
       });
     },
-    [requireLogin, handleCloseModals],
+    [requireLogin, handleCloseModals]
   );
 
   const handleEditPostImage = useCallback(
@@ -324,7 +343,7 @@ const CommunityMain = () => {
         });
       });
     },
-    [requireLogin],
+    [requireLogin]
   );
 
   const handleDeleteAllComments = useCallback(
@@ -336,7 +355,7 @@ const CommunityMain = () => {
         });
       });
     },
-    [requireLogin],
+    [requireLogin]
   );
 
   const handleDeleteSelectedComments = useCallback(
@@ -353,51 +372,78 @@ const CommunityMain = () => {
         });
       });
     },
-    [requireLogin],
+    [requireLogin]
   );
 
   // ===== 트렌딩 카드 클릭 =====
   const handleTrendingCardClick = useCallback(
     (item) => {
-      handleOpenAnyPostModal(item); //  이미 item 기반으로 열도록 통일해둠
+      handleOpenAnyPostModal(item);
     },
-    [handleOpenAnyPostModal],
+    [handleOpenAnyPostModal]
   );
 
-  // 좋아요 클릭시, 로그인 가드 걸기
+  // ===== 좋아요 토글 =====
   const handleLikeToggle = useCallback(
-    (item, doToggle) => {
-      requireLogin(() => {
-        // 여기서 실제 서버 호출 자리(나중에) 가능
-        doToggle?.();
+    (item) => {
+      requireLogin(async () => {
+        try {
+          const current = likedMap[item.id] ?? {
+            liked: item.isLiked ?? false,
+            likeCount: item.likes ?? 0,
+          };
+
+          const payload = {
+            memberId: currentUser?.id,
+            postId: item.id,
+          };
+
+          if (!payload.memberId) {
+            setLoginModalOpen(true);
+            return;
+          }
+
+          if (current.liked) {
+            await deletePostLike(payload);
+          } else {
+            await createPostLike(payload);
+          }
+
+          const nextLiked = !current.liked;
+          const nextLikeCount = current.likeCount + (nextLiked ? 1 : -1);
+
+          setLikedMap((prev) => ({
+            ...prev,
+            [item.id]: {
+              liked: nextLiked,
+              likeCount: nextLikeCount,
+            },
+          }));
+        } catch (error) {
+          console.error("좋아요 처리 실패:", error);
+          alert(error.message);
+        }
       });
     },
-    [requireLogin],
+    [requireLogin, likedMap, currentUser]
   );
 
   // keyword 를 URL에서 읽어서 searchState에 동기화
-  // 이렇게 하면 주소가 바뀔 때마다:
-  // /communitymain?keyword=김치
-  // searchState.keyword = "김치"
-  // 로 연결돼서 FeedGrid 필터링이 돌아감
   useEffect(() => {
-    const keywordFromUrl = searchParams.get("keyword") || ""
-    const sortFromUrl = searchParams.get("sort") || "latest"
+    const keywordFromUrl = searchParams.get("keyword") || "";
+    const sortFromUrl = searchParams.get("sort") || "latest";
 
     setSearchState((prev) => {
-      if (
-        prev.keyword === keywordFromUrl && 
-        prev.sort === sortFromUrl
-      ) {
-        return prev
+      if (prev.keyword === keywordFromUrl && prev.sort === sortFromUrl) {
+        return prev;
       }
       return {
         ...prev,
         keyword: keywordFromUrl,
-        sort: sortFromUrl
-      }
-    })
-  }, [searchParams]) 
+        sort: sortFromUrl,
+      };
+    });
+  }, [searchParams]);
 
   return (
     <S.Page>
@@ -444,9 +490,8 @@ const CommunityMain = () => {
         onSubmitComment={handleSubmitComment}
         onEditComment={handleEditComment}
         onDeleteComment={handleDeleteComment}
-        //  모달 안에서 "로그인 필요한 버튼"에 쓰라고 넘겨둠 (2번에서 씀)
         requireLogin={requireLogin}
-        isAuthenticated={isAuthenticated}
+        isAuthenticated={isLoggedIn}
       />
 
       <MyPostModal
@@ -466,7 +511,6 @@ const CommunityMain = () => {
 
       <FloatingActions targetId="community-top" />
 
-      {/*  로그인 요구 모달 */}
       <LoginRequireModal
         open={loginModalOpen}
         onClose={() => setLoginModalOpen(false)}
