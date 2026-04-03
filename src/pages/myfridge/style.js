@@ -296,6 +296,14 @@ S.GridStyle = styled.div`
    모달
 ====================== */
 
+S.ModalTitle = styled.h3`
+  font-size: ${({ theme }) => theme.FONT_SIZE.h6};
+  font-weight: ${({ theme }) => theme.FONT_WEIGHT.PRETENDARD.BOLD};
+  text-align: center;
+  margin-bottom: 20px;
+  color: ${({ theme }) => theme.PALLETE.mainblack};
+`;
+
 S.ModalOverlay = styled.div`
   position: fixed;
   inset: 0;

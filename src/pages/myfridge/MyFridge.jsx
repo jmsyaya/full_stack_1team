@@ -25,6 +25,9 @@ const CATEGORIES = [
   "기타",
 ];
 
+// 🔴 임시로 고정ID 사용 --> JWT 사용시 삭제
+const MEMBER_ID = 2;
+
 const MyFridge = () => {
   const [ingredients, setIngredients] = useState([]);
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -40,9 +43,13 @@ const MyFridge = () => {
 
   /* ------------------ 서버에서 데이터 가져오기 ------------------ */
   const fetchFridge = async () => {
-    const res = await fetch("http://localhost:10000/fridge", {
-      credentials: "include",
-    });
+
+    const res = await fetch("http://localhost:10000/fridge");
+
+    // 🔴 JWT 구현 시 주석해제
+    // const res = await fetch("http://localhost:10000/fridge", {
+    //   credentials: "include",
+    // });
     const data = await res.json();
 
     if (!Array.isArray(data)) {
@@ -89,8 +96,9 @@ const MyFridge = () => {
       headers: {
         "Content-Type": "application/json",
       },
-      credentials: "include",
+      // credentials: "include", // 🔴 JWT 구현시 주석 해제
       body: JSON.stringify({
+        memberId: MEMBER_ID, // 🔴 JWT 구현시 삭제
         ingredientName: item.name,
         category: item.category,
         quantity: Number(item.quantity),
@@ -106,7 +114,7 @@ const MyFridge = () => {
   const deleteItem = async (id) => {
     await fetch(`http://localhost:10000/fridge/${id}`, {
       method: "DELETE",
-      credentials: "include",
+      // credentials: "include", // 🔴 JWT 구현시 주석 해제
     });
   };
 
@@ -118,7 +126,7 @@ const MyFridge = () => {
     fetchFridge();
   };
 
-  /* ------------------ 🔥 수정 ------------------ */
+  /* ------------------ 수정 ------------------ */
   const updateItem = async (item) => {
     try {
       console.log("수정 요청:", item);
@@ -138,7 +146,7 @@ const MyFridge = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include",
+        // credentials: "include", // 🔴 JWT 구현시 주석 해제
         body: JSON.stringify(body),
       });
 
