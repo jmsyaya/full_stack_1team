@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useCallback,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import * as S from "./style";
 
@@ -22,9 +28,9 @@ const MyRecipe = () => {
   const navigate = useNavigate();
   const { member, isAuthenticated } = useAuthStore();
 
-  const isLoggedIn = Boolean(isAuthenticated && member?.id)
+  const isLoggedIn = Boolean(isAuthenticated && member?.id);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
-  console.log("로그인 상태", isAuthenticated, member)
+  console.log("로그인 상태", isAuthenticated, member);
 
   const [keyword, setKeyword] = useState("");
   const [sortKey, setSortKey] = useState("saved_latest");
@@ -34,7 +40,7 @@ const MyRecipe = () => {
   const pageSize = 12;
   // 그리드 상단 스크롤 타겟
   const gridTopRef = useRef(null);
-  
+
   const requireLogin = useCallback(
     (action) => {
       if (!isAuthenticated || !member) {
@@ -45,53 +51,54 @@ const MyRecipe = () => {
       return true;
     },
     [isAuthenticated, member],
-  ); 
+  );
 
   const fetchSavedList = useCallback(async () => {
     try {
-      if (!member?.id) return
+      if (!member?.id) return;
 
-      const res = await getSavedRecipes(member.id)
-      console.log("저장 레시피 조회 결과", res)
+      const res = await getSavedRecipes(member.id);
+      console.log("저장 레시피 조회 결과", res);
 
       // 백엔드 구조에 맞게 바꿔야함
-      const list = Array.isArray(res) ? res : []
+      const list = Array.isArray(res) ? res : [];
 
       const mapped = list.map((item) => ({
         id: item.id,
         title: item.title,
-        description: item.description,
-        imageUrl: item.imageUrl,
-        cookTime: item.cookTime,
+        description: item.description ?? "",
+        imageUrl: item.imageUrl ?? "",
+        cookTime: item.cookTime ?? 0,
         difficulty: item.difficulty,
         category: item.category,
         xp: item.xp,
-        createdAt: item.createAt,
+        createdAt: item.createdAt,
         // missingIngredients: item.missingIngredients,
-        saved: true
+        saved: true,
+        ingredients: item.ingredients ?? { main: [], sub: [] },
+        steps: item.steps ?? [],
+      }));
 
-      }))
-
-      setSavedList(mapped)
+      setSavedList(mapped);
     } catch (error) {
-      console.log(error)
-      setSavedList([])
+      console.log(error);
+      setSavedList([]);
     }
-  }, [member])
+  }, [member]);
 
   useEffect(() => {
-    if (!isLoggedIn) return
-    fetchSavedList()
-  }, [isLoggedIn, fetchSavedList])
+    if (!isLoggedIn) return;
+    fetchSavedList();
+  }, [isLoggedIn, fetchSavedList]);
 
   const handleToggleBookmark = useCallback(
     async (savedRecipeId) => {
       requireLogin(async () => {
-        try{
-          await deleteSavedRecipe(savedRecipeId)
+        try {
+          await deleteSavedRecipe(savedRecipeId);
           setSavedList((prev) => prev.filter((r) => r.id !== savedRecipeId));
         } catch (error) {
-          console.log(error)
+          console.log(error);
         }
       });
     },
@@ -109,7 +116,7 @@ const MyRecipe = () => {
     },
     [navigate, savedList],
   );
-  
+
   const compareBySortKey = useCallback(
     (a, b) => {
       const tieBreaker = () => b.id - a.id;
@@ -140,14 +147,17 @@ const MyRecipe = () => {
       return (
         r.title.toLowerCase().includes(q) ||
         (r.description ?? "").toLowerCase().includes(q) ||
-        (r.missingIngredients ?? "").toLowerCase().includes(q)
+        String(r.missingIngredients ?? "").toLowerCase().includes(q)
       );
     });
 
     return [...filtered].sort(compareBySortKey);
   }, [savedList, keyword, compareBySortKey]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredAndSorted.length / pageSize));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredAndSorted.length / pageSize),
+  );
 
   const pagedItems = useMemo(() => {
     const start = (page - 1) * pageSize;

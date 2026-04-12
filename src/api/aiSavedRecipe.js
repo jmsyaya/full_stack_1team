@@ -17,14 +17,14 @@ export const getSavedRecipes = async (memberId) => {
 }
 
 // 레시피 저장
-export const savedRecipe = async (recipeId) => {
+export const savedRecipe = async (recipeData) => {
   const response = await fetch(`${BASE_URL}/aisavedrecipe`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     credentials: "include",
-    body: JSON.stringify(({recipeId}))
+    body: JSON.stringify(recipeData)
   })
   
   if (!response.ok) {

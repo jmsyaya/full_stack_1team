@@ -4,12 +4,13 @@ import * as S from "./style";
 
 const MyRecipeCard = ({ item, onClick, onToggleBookmark }) => {
   const {
+    id,
     title,
     recipe,
-    desc,
+    description,
     rating,
     xp,
-    cookTimeMin,
+    cookTime,
     missingIngredients,
     image,
     imageUrl,
@@ -49,7 +50,7 @@ const MyRecipeCard = ({ item, onClick, onToggleBookmark }) => {
      =============================== */
   const handleBookmarkToggle = (e) => {
     e.stopPropagation();
-    onToggleBookmark?.();
+    onToggleBookmark?.(id);
     setAnimKey((k) => k + 1); // 클릭할 때마다 key 바꿔서 애니메이션 재실행
   };
 
@@ -57,7 +58,7 @@ const MyRecipeCard = ({ item, onClick, onToggleBookmark }) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       e.stopPropagation();
-      onToggleBookmark?.();
+      onToggleBookmark?.(id);
       setAnimKey((k) => k + 1); // 키보드 토글도 애니메이션 재실행
     }
   };
@@ -89,7 +90,7 @@ const MyRecipeCard = ({ item, onClick, onToggleBookmark }) => {
       <S.Body>
         <S.Title title={title}>{title}</S.Title>
 
-        {recipe && <S.Desc title={recipe || desc}>{recipe || desc}</S.Desc>}
+        {(recipe || description) && (<S.Desc title={recipe || description}>{recipe || description}</S.Desc>)}
 
         <S.BadgeRow>
           <S.Badge className="star">
@@ -108,7 +109,7 @@ const MyRecipeCard = ({ item, onClick, onToggleBookmark }) => {
         </S.BadgeRow>
 
         <S.MetaRow>
-          <S.MetaChip>{`조리시간 | ${cookTimeMin || 10}분`}</S.MetaChip>
+          <S.MetaChip>{`조리시간 | ${cookTime || 10}분`}</S.MetaChip>
           <S.MetaChip>{`부족한 재료 | ${missingText}`}</S.MetaChip>
         </S.MetaRow>
       </S.Body>
