@@ -14,6 +14,7 @@ import LoginRequireModal from "../../components/layoutcomponents/loginrequiremod
 import usePostStore from "../../store/postStore";
 import useAuthStore from "../../store/authStore";
 import { createPostLike, deletePostLike } from "../../api/postLike";
+import { createPost, updatePost, deletePost } from "../../api/post";
 
 const CommunityMain = () => {
   const navigate = useNavigate();
@@ -59,7 +60,7 @@ const CommunityMain = () => {
       action?.();
       return true;
     },
-    [currentUser]
+    [currentUser],
   );
 
   // 게시글 fetch
@@ -92,8 +93,8 @@ const CommunityMain = () => {
         raw?.images?.length > 0
           ? raw.images
           : raw?.imageUrl
-          ? [raw.imageUrl]
-          : [],
+            ? [raw.imageUrl]
+            : [],
       likes: raw?.likes ?? raw?.likeCount ?? 0,
       isLiked: raw?.isLiked ?? false,
       content: raw?.postContent ?? raw?.content ?? raw?.desc ?? "",
@@ -106,7 +107,7 @@ const CommunityMain = () => {
 
   const allItems = useMemo(
     () => (posts ?? []).map(normalizeFromStore),
-    [posts, normalizeFromStore]
+    [posts, normalizeFromStore],
   );
 
   const buildPostForModal = useCallback((item) => {
@@ -171,7 +172,7 @@ const CommunityMain = () => {
     });
 
     const filtered = merged.filter((it) =>
-      matchesKeyword(it, searchState.keyword)
+      matchesKeyword(it, searchState.keyword),
     );
 
     const sorted = [...filtered];
@@ -204,7 +205,7 @@ const CommunityMain = () => {
       setIsOtherPostModalOpen(true);
       setIsMyPostModalOpen(false);
     },
-    [buildPostForModal, meNickname, requireLogin]
+    [buildPostForModal, meNickname, requireLogin],
   );
 
   const handleCloseModals = useCallback(() => {
@@ -255,7 +256,7 @@ const CommunityMain = () => {
         });
       });
     },
-    [requireLogin, meNickname]
+    [requireLogin, meNickname],
   );
 
   // ===== 댓글 수정/삭제 =====
@@ -274,13 +275,13 @@ const CommunityMain = () => {
         setSelectedPost((prev) => {
           if (!prev) return prev;
           const nextComments = (prev.comments ?? []).map((c) =>
-            c === comment ? { ...c, text: trimmed, time: "방금 전" } : c
+            c === comment ? { ...c, text: trimmed, time: "방금 전" } : c,
           );
           return { ...prev, comments: nextComments };
         });
       });
     },
-    [requireLogin]
+    [requireLogin],
   );
 
   const handleDeleteComment = useCallback(
@@ -291,40 +292,83 @@ const CommunityMain = () => {
 
         setSelectedPost((prev) => {
           if (!prev) return prev;
-          const nextComments = (prev.comments ?? []).filter((c) => c !== comment);
+          const nextComments = (prev.comments ?? []).filter(
+            (c) => c !== comment,
+          );
           return { ...prev, comments: nextComments };
         });
       });
     },
-    [requireLogin]
+    [requireLogin],
   );
 
   // ===== 내 글 전용 액션들 =====
+  // 실제 API 호출 + 목록 재조회
+  // // 게시글 생성
+  // const handleCreatePost = useCallback(
+  //   (postData) => {
+  //     requireLogin(async () => {
+  //       try {
+  //         await createPost(postData);
+  //         await fetchPosts();
+  //       } catch (error) {
+  //         console.error("게시글 생성 실패:", error);
+  //         alert(error.message);
+  //       }
+  //     });
+  //   },
+  //   [requireLogin, fetchPosts],
+  // ); 이 함수는 글쓰는 페이지인 foodcomplete에서 사용하는 게 적합
+
+  // 게시글 수정
   const handleEditPost = useCallback(
     (postId, patch) => {
-      requireLogin(() => {
-        setSelectedPost((prev) => {
-          if (!prev || prev.id !== postId) return prev;
-          return {
-            ...prev,
-            recipeTitle: patch?.recipeTitle ?? prev.recipeTitle,
-            content: patch?.content ?? prev.content,
-            ingredients: patch?.ingredients ?? prev.ingredients,
-          };
-        });
+      requireLogin(async () => {
+        try {
+          await updatePost(postId, {
+            postTitle: patch?.recipeTitle,
+            postContent: patch?.content,
+          });
+
+          await fetchPosts();
+
+          setSelectedPost((prev) => {
+            if (!prev || prev.id !== postId) return prev;
+            return {
+              ...prev,
+              recipeTitle: patch?.recipeTitle ?? prev.recipeTitle,
+              content: patch?.content ?? prev.content,
+              ingredients: patch?.ingredients ?? prev.ingredients,
+            };
+          });
+        } catch (error) {
+          console.error("게시글 수정 실패:", error);
+          alert(error.message);
+        }
       });
     },
-    [requireLogin]
+    [requireLogin, fetchPosts],
   );
+
+  // 게시글 삭제
 
   const handleDeletePost = useCallback(
     (postId) => {
-      requireLogin(() => {
-        console.log("delete post:", postId);
-        handleCloseModals();
+      requireLogin(async () => {
+        try {
+          const ok = window.confirm("게시글을 삭제할까요?");
+          if (!ok) return;
+
+          await deletePost(postId);
+          await fetchPosts();
+          handleCloseModals();
+        } catch (error) {
+          console.log("게시글 삭제 실패:", error);
+          alert(error.message);
+        }
       });
     },
-    [requireLogin, handleCloseModals]
+    [requireLogin, handleCloseModals, fetchPosts],
   );
 
   const handleEditPostImage = useCallback(
@@ -343,7 +387,7 @@ const CommunityMain = () => {
         });
       });
     },
-    [requireLogin]
+    [requireLogin],
   );
 
   const handleDeleteAllComments = useCallback(
@@ -355,7 +399,7 @@ const CommunityMain = () => {
         });
       });
     },
-    [requireLogin]
+    [requireLogin],
   );
 
   const handleDeleteSelectedComments = useCallback(
@@ -372,7 +416,7 @@ const CommunityMain = () => {
         });
       });
     },
-    [requireLogin]
+    [requireLogin],
   );
 
   // ===== 트렌딩 카드 클릭 =====
@@ -380,7 +424,7 @@ const CommunityMain = () => {
     (item) => {
       handleOpenAnyPostModal(item);
     },
-    [handleOpenAnyPostModal]
+    [handleOpenAnyPostModal],
   );
 
   // ===== 좋아요 토글 =====
@@ -425,7 +469,7 @@ const CommunityMain = () => {
         }
       });
     },
-    [requireLogin, likedMap, currentUser]
+    [requireLogin, likedMap, currentUser],
   );
 
   // keyword 를 URL에서 읽어서 searchState에 동기화

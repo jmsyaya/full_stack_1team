@@ -43,22 +43,26 @@ const MyFridge = () => {
 
   /* ------------------ 서버에서 데이터 가져오기 ------------------ */
   const fetchFridge = async () => {
+  try {
+    console.log("현재 페이지 origin:", window.location.origin);
 
     const res = await fetch("http://localhost:10000/fridge");
+    console.log("응답 상태:", res.status, res.ok);
 
-    // 🔴 JWT 구현 시 주석해제
-    // const res = await fetch("http://localhost:10000/fridge", {
-    //   credentials: "include",
-    // });
+    if (!res.ok) {
+      const text = await res.text();
+      console.log("에러 응답 본문:", text);
+      throw new Error(`HTTP ${res.status}`);
+    }
+
     const data = await res.json();
+    console.log("응답 데이터:", data);
 
     if (!Array.isArray(data)) {
       console.error("서버 에러:", data);
       return;
     }
-    console.log("응답 데이터:", data);
 
-    // 백엔드 group 구조 → 프론트 구조로 변환
     const mapped = data.flatMap((item) =>
       item.items.map((sub) => ({
         fridgeId: sub.id,
@@ -72,11 +76,45 @@ const MyFridge = () => {
     );
 
     setIngredients(mapped);
-  };
+  } catch (e) {
+    console.error("🔥 fetchFridge 실패:", e);
+  }
+};
+  // const fetchFridge = async () => {
 
-  useEffect(() => {
-    fetchFridge();
-  }, []);
+  //   const res = await fetch("http://localhost:10000/fridge");
+
+  //   // 🔴 JWT 구현 시 주석해제
+  //   // const res = await fetch("http://localhost:10000/fridge", {
+  //   //   credentials: "include",
+  //   // });
+  //   const data = await res.json();
+
+  //   if (!Array.isArray(data)) {
+  //     console.error("서버 에러:", data);
+  //     return;
+  //   }
+  //   console.log("응답 데이터:", data);
+
+  //   // 백엔드 group 구조 → 프론트 구조로 변환
+  //   const mapped = data.flatMap((item) =>
+  //     item.items.map((sub) => ({
+  //       fridgeId: sub.id,
+  //       name: item.ingredientName,
+  //       category: item.category,
+  //       icon: CATEGORY_ICONS[item.category] || "📦",
+  //       quantity: sub.quantity,
+  //       expiredAt: sub.expireDate ? sub.expireDate.split("T")[0] : "",
+  //       createdAt: sub.expireDate,
+  //     })),
+  //   );
+
+  //   setIngredients(mapped);
+  // };
+
+  // useEffect(() => {
+  //   fetchFridge();
+  // }, []);
 
   /* ------------------ 선택 토글 ------------------ */
   const toggleSelected = (fridgeId) => {
