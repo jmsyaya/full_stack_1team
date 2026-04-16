@@ -1,8 +1,9 @@
 import React, { useRef, useState, useEffect } from "react";
 import S from "./style";
-import usePostStore from "../../store/postStore";
+// import usePostStore from "../../store/postStore";
 import useAuthStore from "../../store/authStore";
 import { useNavigate, useLocation } from "react-router-dom";
+import { createPost } from "../../api/post";
 
 const FoodComplete = () => {
   const [selectedItems, setSelectedItems] = useState([]);
@@ -12,11 +13,35 @@ const FoodComplete = () => {
   const [animatedOrange, setAnimatedOrange] = useState(0);
   const [animatedBlue, setAnimatedBlue] = useState(0);
   const xpRef = useRef(null);
-  const { addPost } = usePostStore();
-  const { user } = useAuthStore();
+
+  // const { addPost } = usePostStore();
+  // const { user } = useAuthStore();
+  const authStore = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
   const fileInputRef = useRef(null);
+
+  // ✅ 추가 된 부분
+  const persistedAuth = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("auth-storage") || "{}");
+    } catch (error) {
+      console.error("auth-storage 파싱 실패:", error);
+      return {};
+    }
+  })();
+
+  const persistedMember = persistedAuth?.state?.member ?? null;
+  const persistedUser = persistedAuth?.state?.user ?? null;
+
+  const user =
+    authStore.user ??
+    authStore.member ??
+    persistedUser ??
+    persistedMember ??
+    null;
+  //
+
   const toggleItem = (index) => {
     setSelectedItems((prev) =>
       prev.includes(index) ? prev.filter((v) => v !== index) : [...prev, index],
@@ -40,6 +65,7 @@ const FoodComplete = () => {
     };
     reader.readAsDataURL(file);
   };
+
   const recipe = location.state?.recipe;
 
   useEffect(() => {
@@ -79,7 +105,8 @@ const FoodComplete = () => {
     recipe.image || recipe.imageUrl || "/assets/images/default.png";
 
   // 완료 버튼 클릭
-  const handleSubmit = () => {
+  // ✅ 추가된 부분
+  const handleSubmit = async () => {
     if (!previewImage) {
       alert("사진을 업로드해주세요.");
       return;
@@ -90,46 +117,96 @@ const FoodComplete = () => {
       return;
     }
 
-    const selectedIngredientNames = selectedItems.map(
-      (index) => ingredientList[index],
-    );
-
-    const newPost = {
-      id: Date.now(),
-
-      recipeTitle: recipe.title,
-      content: review,
-
-      images: [previewImage], // 배열로 변경
-
-      ingredients: selectedIngredientNames,
-
-      author: {
-        // 객체로 통일
-        id: user?.id || 1,
-        nickname: user?.nickname || "요리왕곰순",
-        level: user?.level || 1,
-      },
-
-      // createdAt: new Date().toLocaleDateString(),
-      createdAt: new Date().toISOString(), // ✅ 날짜 포맷을 ISO로 통일 (트랜딩 캐러셀 NEW/인기 배지 계산 시 로케일 차이로 파싱 깨지는 것 방지)
-      likes: 0,
-      xp: selectedIngredientNames.length * 10, // 선택사항
-      comments: [],
+    const payload = {
+      memberId: user?.id ?? user?.memberId,
+      recipeId: recipe?.id ?? recipe?.recipeId,
+      postTitle: recipe?.title ?? recipe?.recipeTitle,
+      postContent: review,
     };
 
-    addPost(newPost);
+    console.log("authStore:", authStore);
+    console.log("user:", user);
+    console.log("recipe:", recipe);
+    console.log("payload:", payload);
 
-    alert("커뮤니티에 업로드되었습니다!");
+    if (!payload.memberId) {
+      alert("로그인 정보가 없습니다.");
+      return;
+    }
 
-    // 초기화
-    setReview("");
-    setPreviewImage(null);
-    setSelectedItems([]);
+    if (!payload.recipeId) {
+      alert("레시피 정보가 없습니다.");
+      return;
+    }
 
-    // 내 게시글 페이지로 이동
-    navigate("/myposts"); // ← 경로는 당신 프로젝트에 맞게 수정
+    try {
+      await createPost(payload);
+
+      alert("커뮤니티에 업로드되었습니다!");
+
+      setReview("");
+      setPreviewImage(null);
+      setSelectedItems([]);
+
+      navigate("/community");
+    } catch (error) {
+      console.error("게시글 생성 실패:", error);
+      alert(error.message);
+    }
   };
+  //
+
+  // const handleSubmit = () => {
+  //   if (!previewImage) {
+  //     alert("사진을 업로드해주세요.");
+  //     return;
+  //   }
+
+  //   if (!review.trim()) {
+  //     alert("후기를 작성해주세요.");
+  //     return;
+  //   }
+
+  //   const selectedIngredientNames = selectedItems.map(
+  //     (index) => ingredientList[index],
+  //   );
+
+  //   const newPost = {
+  //     id: Date.now(),
+
+  //     recipeTitle: recipe.title,
+  //     content: review,
+
+  //     images: [previewImage], // 배열로 변경
+
+  //     ingredients: selectedIngredientNames,
+
+  //     author: {
+  //       // 객체로 통일
+  //       id: user?.id || 1,
+  //       nickname: user?.nickname || "요리왕곰순",
+  //       level: user?.level || 1,
+  //     },
+
+  //     // createdAt: new Date().toLocaleDateString(),
+  //     createdAt: new Date().toISOString(), // ✅ 날짜 포맷을 ISO로 통일 (트랜딩 캐러셀 NEW/인기 배지 계산 시 로케일 차이로 파싱 깨지는 것 방지)
+  //     likes: 0,
+  //     xp: selectedIngredientNames.length * 10, // 선택사항
+  //     comments: [],
+  //   };
+
+  //   addPost(newPost);
+
+  //   alert("커뮤니티에 업로드되었습니다!");
+
+  //   // 초기화
+  //   setReview("");
+  //   setPreviewImage(null);
+  //   setSelectedItems([]);
+
+  //   // 내 게시글 페이지로 이동
+  //   navigate("/myposts"); // ← 경로는 당신 프로젝트에 맞게 수정
+  // };
 
   return (
     <S.FCPage>
@@ -197,7 +274,6 @@ const FoodComplete = () => {
 
           {/* 재료 체크 */}
           <S.FCSection>
-            
             <S.FCSectionTitleRow>
               <S.FCSectionIcon src="/assets/icons/product.png" />
               <S.FCSectionHeading>사용한 재료 체크</S.FCSectionHeading>
@@ -225,11 +301,10 @@ const FoodComplete = () => {
                   </S.FCIngredientItem>
                 );
               })}
-
             </S.FCIngredientBox>
-              <S.FCSelectedCount>
-                {selectedItems.length}개 재료 선택됨
-              </S.FCSelectedCount>
+            <S.FCSelectedCount>
+              {selectedItems.length}개 재료 선택됨
+            </S.FCSelectedCount>
           </S.FCSection>
 
           {/* ================= 획득한 XP ================= */}

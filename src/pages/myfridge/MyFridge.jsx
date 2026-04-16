@@ -25,7 +25,6 @@ const CATEGORIES = [
   "기타",
 ];
 
-
 const MyFridge = () => {
   const [ingredients, setIngredients] = useState([]);
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -41,33 +40,68 @@ const MyFridge = () => {
 
   /* ------------------ 서버에서 데이터 가져오기 ------------------ */
   const fetchFridge = async () => {
+    try {
+      console.log("현재 페이지 origin:", window.location.origin);
 
-    const res = await fetch("http://localhost:10000/fridge", {
-      credentials: "include",
-    });
-    const data = await res.json();
+      const res = await fetch("http://localhost:10000/fridge", {
+        credentials: "include",
+      });
+      const data = await res.json();
+      console.log("응답 데이터:", data);
 
-    if (!Array.isArray(data)) {
-      console.error("서버 에러:", data);
-      return;
+      if (!Array.isArray(data)) {
+        console.error("서버 에러:", data);
+        return;
+      }
+
+      const mapped = data.flatMap((item) =>
+        item.items.map((sub) => ({
+          fridgeId: sub.id,
+          name: item.ingredientName,
+          category: item.category,
+          icon: CATEGORY_ICONS[item.category] || "📦",
+          quantity: sub.quantity,
+          expiredAt: sub.expireDate ? sub.expireDate.split("T")[0] : "",
+          createdAt: sub.expireDate,
+        })),
+      );
+
+      setIngredients(mapped);
+    } catch (e) {
+      console.error("🔥 fetchFridge 실패:", e);
     }
-    console.log("응답 데이터:", data);
-
-    // 백엔드 group 구조 → 프론트 구조로 변환
-    const mapped = data.flatMap((item) =>
-      item.items.map((sub) => ({
-        fridgeId: sub.id,
-        name: item.ingredientName,
-        category: item.category,
-        icon: CATEGORY_ICONS[item.category] || "📦",
-        quantity: sub.quantity,
-        expiredAt: sub.expireDate ? sub.expireDate.split("T")[0] : "",
-        createdAt: sub.expireDate,
-      })),
-    );
-
-    setIngredients(mapped);
   };
+  // const fetchFridge = async () => {
+
+  //   const res = await fetch("http://localhost:10000/fridge");
+
+  //   // 🔴 JWT 구현 시 주석해제
+  //   // const res = await fetch("http://localhost:10000/fridge", {
+  //   //   credentials: "include",
+  //   // });
+  //   const data = await res.json();
+
+  //   if (!Array.isArray(data)) {
+  //     console.error("서버 에러:", data);
+  //     return;
+  //   }
+  //   console.log("응답 데이터:", data);
+
+  //   // 백엔드 group 구조 → 프론트 구조로 변환
+  //   const mapped = data.flatMap((item) =>
+  //     item.items.map((sub) => ({
+  //       fridgeId: sub.id,
+  //       name: item.ingredientName,
+  //       category: item.category,
+  //       icon: CATEGORY_ICONS[item.category] || "📦",
+  //       quantity: sub.quantity,
+  //       expiredAt: sub.expireDate ? sub.expireDate.split("T")[0] : "",
+  //       createdAt: sub.expireDate,
+  //     })),
+  //   );
+
+  //   setIngredients(mapped);
+  // };
 
   useEffect(() => {
     fetchFridge();
@@ -91,7 +125,7 @@ const MyFridge = () => {
       headers: {
         "Content-Type": "application/json",
       },
-      credentials: "include", 
+      credentials: "include",
       body: JSON.stringify({
         ingredientName: item.name,
         category: item.category,
@@ -139,7 +173,7 @@ const MyFridge = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include", 
+        credentials: "include",
         body: JSON.stringify(body),
       });
 
