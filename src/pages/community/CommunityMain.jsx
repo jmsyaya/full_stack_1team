@@ -65,8 +65,9 @@ const CommunityMain = () => {
 
   // 게시글 fetch
   useEffect(() => {
+    if(!isLoggedIn) return
     fetchPosts();
-  }, [fetchPosts]);
+  }, [fetchPosts, isLoggedIn]);
 
   const normalizeFromStore = useCallback((raw) => {
     const nicknameRaw =
@@ -96,7 +97,7 @@ const CommunityMain = () => {
             ? [raw.imageUrl]
             : [],
       likes: raw?.likes ?? raw?.likeCount ?? 0,
-      isLiked: raw?.isLiked ?? false,
+      liked: raw?.liked ?? false,
       content: raw?.postContent ?? raw?.content ?? raw?.desc ?? "",
       ingredients: Array.isArray(raw?.ingredients) ? raw.ingredients : [],
       createdAt: raw?.createdAt ?? "",
@@ -119,6 +120,7 @@ const CommunityMain = () => {
         level: item.level ?? 1,
       },
       likes: item.likes ?? 0,
+      liked: item.liked ?? false,
       createdAt: item.createdAt ?? "",
       recipeTitle: item.recipeName ?? "",
       content: item.content ?? "",
@@ -167,7 +169,7 @@ const CommunityMain = () => {
       return {
         ...item,
         likes: likedState.likeCount,
-        isLiked: likedState.liked,
+        liked: likedState.liked,
       };
     });
 
@@ -429,48 +431,55 @@ const CommunityMain = () => {
 
   // ===== 좋아요 토글 =====
   const handleLikeToggle = useCallback(
-    (item) => {
-      requireLogin(async () => {
-        try {
-          const current = likedMap[item.id] ?? {
-            liked: item.isLiked ?? false,
-            likeCount: item.likes ?? 0,
-          };
+  (postId, liked) => {
+    console.log("handleToggleLike 진입", { postId, liked, likedMap, displayItems });
 
-          const payload = {
-            memberId: currentUser?.id,
-            postId: item.id,
-          };
+    requireLogin(async () => {
+      try {
+        const targetItem = displayItems.find((post) => post.id === postId);
 
-          if (!payload.memberId) {
-            setLoginModalOpen(true);
-            return;
-          }
+        const current = likedMap[postId] ?? {
+          liked: liked ?? false,
+          likeCount: targetItem?.likes ?? 0,
+        };
 
-          if (current.liked) {
-            await deletePostLike(payload);
-          } else {
-            await createPostLike(payload);
-          }
+        console.log("현재 좋아요 상태", current);
 
-          const nextLiked = !current.liked;
-          const nextLikeCount = current.likeCount + (nextLiked ? 1 : -1);
-
-          setLikedMap((prev) => ({
-            ...prev,
-            [item.id]: {
-              liked: nextLiked,
-              likeCount: nextLikeCount,
-            },
-          }));
-        } catch (error) {
-          console.error("좋아요 처리 실패:", error);
-          alert(error.message);
+        if (current.liked) {
+          console.log("DELETE 호출");
+          await deletePostLike({ postId });
+        } else {
+          console.log("POST 호출");
+          await createPostLike({ postId });
         }
-      });
-    },
-    [requireLogin, likedMap, currentUser],
-  );
+
+        const nextLiked = !current.liked;
+        const nextLikeCount = current.likeCount + (nextLiked ? 1 : -1);
+
+        setLikedMap((prev) => ({
+          ...prev,
+          [postId]: {
+            liked: nextLiked,
+            likeCount: nextLikeCount,
+          },
+        }));
+
+        setSelectedPost((prev) => {
+          if (!prev || prev.id !== postId) return prev;
+          return {
+            ...prev,
+            liked: nextLiked,
+            likes: nextLikeCount,
+          };
+        });
+      } catch (error) {
+        console.error("좋아요 처리 실패:", error);
+        alert(error.message);
+      }
+    });
+  },
+  [requireLogin, likedMap, displayItems],
+);
 
   // keyword 를 URL에서 읽어서 searchState에 동기화
   useEffect(() => {
@@ -534,6 +543,7 @@ const CommunityMain = () => {
         onSubmitComment={handleSubmitComment}
         onEditComment={handleEditComment}
         onDeleteComment={handleDeleteComment}
+        onToggleLike={handleLikeToggle}
         requireLogin={requireLogin}
         isAuthenticated={isLoggedIn}
       />

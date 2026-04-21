@@ -63,12 +63,13 @@ const PostCard = ({
   allItems = [],
   onLikeToggle,
 }) => {
-  const liked = item?.isLiked ?? false
+  const liked = item?.liked ?? false
+  console.log("PostCard liked", item.id, item.liked, liked);
   const likeCount = item?.likes ?? 0
 
   const handleLikeToggle = (e) => {
     e.stopPropagation();
-    onLikeToggle?.(item);
+    onLikeToggle?.(item.id, liked);
   };
 
   // ===== 기본 데이터 =====

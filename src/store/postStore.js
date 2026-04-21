@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { getPosts } from "../api/post";
 
 const usePostStore = create(
   persist(
@@ -8,18 +9,11 @@ const usePostStore = create(
 
       fetchPosts: async () => {
         try {
-          const res = await fetch("http://localhost:10000/posts")
-          
-          if (!res.ok) {
-            throw new Error("서버 오류")
-          }
-          
-          const data = await res.json()
-          console.log("스토어에 넣는 데이터:", data)
-
-          set({ posts: data })
+          const data = await getPosts();
+          console.log("스토어에 넣는 데이터:", data);
+          set({ posts: data });
         } catch (error) {
-          console.log("게시글 불러오기 실패:", error)
+          console.log("게시글 불러오기 실패:", error);
         }
       },
 
