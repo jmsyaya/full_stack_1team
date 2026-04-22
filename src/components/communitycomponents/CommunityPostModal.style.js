@@ -270,6 +270,7 @@ export const LikeBadge = styled.div`
   ${FONT_STYLE.PRETENDARD.H7_REGULAR};
   font-weight: ${({ theme }) => theme.FONT_WEIGHT.PRETENDARD.MEDIUM};
   color: ${({ theme }) => theme.PALLETE.mainblack};
+  cursor: pointer;
 `;
 
 export const HeartIcon = styled.img`

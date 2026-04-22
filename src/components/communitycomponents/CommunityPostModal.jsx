@@ -21,7 +21,7 @@ const CommunityPostModal = ({
   meNickname, // "요리왕곰순"
   onEditComment, // (comment, nextText) => {}
   onDeleteComment, // (comment) => {}
-
+  onToggleLike,
   requireLogin,
   isAuthenticated,
 }) => {
@@ -202,6 +202,18 @@ const CommunityPostModal = ({
 
   const count = commentText.length;
 
+  const handleLikeClick = async () => {
+    try {
+      console.log("좋아요 클릭됨", post.id, post.liked);
+
+      await onToggleLike?.(post.id, post.liked);
+
+      console.log("좋아요 요청 완료");
+    } catch (err) {
+      console.error("좋아요 실패", err);
+    }
+  };
+
   return (
     <S.Backdrop
       onClick={(e) => {
@@ -282,9 +294,13 @@ const CommunityPostModal = ({
                   <span>Lv.{post?.author?.level ?? 1}</span>
                 </S.LevelBadge>
 
-                <S.LikeBadge>
+                <S.LikeBadge onClick={handleLikeClick}>
                   <S.HeartIcon
-                    src={`${process.env.PUBLIC_URL}/assets/icons/heart.svg`}
+                    src={
+                      post?.liked
+                        ? `${process.env.PUBLIC_URL}/assets/icons/full_heart.svg`
+                        : `${process.env.PUBLIC_URL}/assets/icons/empty_heart.svg`
+                    }
                     alt="좋아요"
                   />
                   <span>{post?.likes ?? 0}</span>
