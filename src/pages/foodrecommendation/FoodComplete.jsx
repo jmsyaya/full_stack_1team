@@ -4,6 +4,7 @@ import S from "./style";
 import useAuthStore from "../../store/authStore";
 import { useNavigate, useLocation } from "react-router-dom";
 import { createPost } from "../../api/post";
+import { createPostImage } from "../../api/postimage";
 
 const FoodComplete = () => {
   const [selectedItems, setSelectedItems] = useState([]);
@@ -156,17 +157,30 @@ const FoodComplete = () => {
     }
 
     try {
-      await createPost(payload);
+      const createdPost = await createPost(payload);
+
+      console.log("생성된 게시글 응답:", createdPost);
+
+      const postId = createdPost?.id ?? createdPost?.postId;
+
+      if (!postId) {
+        console.warn(
+          "생성된 게시글 id를 받지 못해서 이미지 등록을 건너뜁니다.",
+        );
+      } else {
+        await createPostImage(postId, previewImage);
+      }
 
       alert("커뮤니티에 업로드되었습니다!");
 
       setReview("");
       setPreviewImage(null);
+      setImageFile(null);
       setSelectedItems([]);
 
       navigate("/community");
     } catch (error) {
-      console.error("게시글 생성 실패:", error);
+      console.error("게시글 생성 또는 이미지 등록 실패:", error);
       alert(error.message);
     }
   };

@@ -1,0 +1,17 @@
+<svg width="360" height="180" viewBox="0 0 360 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="22" y="36" width="10" height="18" rx="2" transform="rotate(42 22 36)" fill="#FF8A4C"/>
+  <rect x="68" y="108" width="9" height="15" rx="2" transform="rotate(48 68 108)" fill="#8ED5FF"/>
+  <rect x="112" y="48" width="11" height="16" rx="2" transform="rotate(-38 112 48)" fill="#C4D89D"/>
+  <rect x="164" y="30" width="8" height="15" rx="2" transform="rotate(10 164 30)" fill="#FFA36C"/>
+  <rect x="219" y="42" width="9" height="17" rx="2" transform="rotate(42 219 42)" fill="#B9A2FF"/>
+  <rect x="292" y="40" width="10" height="15" rx="2" transform="rotate(48 292 40)" fill="#FFD35A"/>
+  <rect x="322" y="94" width="8" height="17" rx="2" transform="rotate(-42 322 94)" fill="#7AA0FF"/>
+  <rect x="252" y="115" width="9" height="16" rx="2" transform="rotate(54 252 115)" fill="#A4D6E2"/>
+  <path d="M180 56l4.7 10.6L196 71.2l-10.6 4.7L180 88l-5.4-12.1L164 71.2l11.3-4.6L180 56z" fill="#FFA36C"/>
+  <path d="M72 55l3.3 7.4 7.7 3.1-7.4 3.3L72 77l-3.6-8.2-7.4-3.3 7.7-3.1L72 55z" fill="#7AA0FF"/>
+  <path d="M276 70l3 6.8 7 2.8-6.7 3L276 90l-3.3-7.4-6.7-3 7-2.8 3-6.8z" fill="#FFCF55"/>
+  <circle cx="130" cy="122" r="3" fill="#7AA0FF"/>
+  <circle cx="210" cy="106" r="3" fill="#FF8A4C"/>
+  <circle cx="308" cy="126" r="3" fill="#B9A2FF"/>
+  <circle cx="46" cy="144" r="3" fill="#FFD35A"/>
+</svg>
