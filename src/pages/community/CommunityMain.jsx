@@ -22,6 +22,7 @@ import {
   deleteAllCommentsByPostId as deleteAllCommentsByPostIdApi,
   deleteSelectedComments as deleteSelectedCommentsApi,
 } from "../../api/comment";
+import { getPostImages } from "../../api/postimage";
 
 const CommunityMain = () => {
   const navigate = useNavigate();
@@ -214,12 +215,59 @@ const CommunityMain = () => {
   // 카드 클릭: 내 글이면 MyPostModal / 아니면 CommunityPostModal
   const handleOpenAnyPostModal = useCallback(
     async (item) => {
+      console.log("🚨 handleOpenAnyPostModal 실행됨");
+      console.log("🚨 클릭한 item:", item);
+      console.log("🚨 클릭한 postId:", item.id);
+
       try {
         const detail = await getPostDetail(item.id);
 
+        console.log("🔥 클릭한 카드 item:", item);
+        console.log("🔥 상세 조회할 postId:", item.id);
+        console.log("🔥 게시글 상세 데이터:", detail);
+
+        let imageList = [];
+
+        try {
+          console.log("🔥 detail.postImage:", detail.postImage);
+          console.log("🔥 이미지 API 호출 직전 postId:", item.id);
+
+          const postImages = await getPostImages(item.id);
+
+          console.log("🔥 /postimage 응답:", postImages);
+
+          const rawImages =
+            Array.isArray(detail.postImage) && detail.postImage.length > 0
+              ? detail.postImage
+              : Array.isArray(postImages)
+                ? postImages
+                : [];
+
+          console.log("🔥 최종으로 사용할 rawImages:", rawImages);
+
+          imageList = rawImages
+            .map((img) => {
+              console.log("🔥 이미지 객체 확인:", img);
+
+              return (
+                img.imageUrl ??
+                img.postImageUrl ??
+                img.url ??
+                img.image ??
+                img.imagePath ??
+                img.postImagePath
+              );
+            })
+            .filter(Boolean);
+
+          console.log("🔥 최종 imageList:", imageList);
+        } catch (imageError) {
+          console.error("🔥 게시글 이미지 조회 실패:", imageError);
+        }
+
         const post = {
           id: detail.id,
-          images: detail.images ?? [],
+          images: imageList,
           author: {
             nickname: detail.member?.memberName ?? "익명",
             level: detail.member?.memberLevel ?? 1,
