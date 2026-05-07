@@ -4,7 +4,7 @@ import S from "./style";
 import useAuthStore from "../../store/authStore";
 import { useNavigate, useLocation } from "react-router-dom";
 import { createPost } from "../../api/post";
-import { createPostImage } from "../../api/postimage";
+import { createPostImageFile } from "../../api/postimage";
 
 const FoodComplete = () => {
   const [selectedItems, setSelectedItems] = useState([]);
@@ -113,10 +113,10 @@ const FoodComplete = () => {
   // 완료 버튼 클릭
   // ✅ 추가된 부분
   const handleSubmit = async () => {
-    if (!previewImage) {
+    if (!imageFile) {
       alert("사진을 업로드해주세요.");
       return;
-    }
+}
 
     if (!review.trim()) {
       alert("후기를 작성해주세요.");
@@ -168,7 +168,7 @@ const FoodComplete = () => {
           "생성된 게시글 id를 받지 못해서 이미지 등록을 건너뜁니다.",
         );
       } else {
-        await createPostImage(postId, previewImage);
+        await createPostImageFile(postId, imageFile);
       }
 
       alert("커뮤니티에 업로드되었습니다!");

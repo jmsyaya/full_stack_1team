@@ -73,11 +73,26 @@ const PostCard = ({
   };
 
   // ===== 기본 데이터 =====
-  const recipeImage =
-    item?.postImage?.[0]?.imageUrl ??
-    item?.images?.[0] ??
-    item?.recipeImage ??
-    "/assets/images/oatmeal.svg";
+const firstImage =
+  item?.images?.[0] ??
+  item?.postImage?.[0] ??
+  item?.postImages?.[0];
+
+const recipeImage =
+  (typeof firstImage === "string"
+    ? firstImage
+    : firstImage?.imageUrl ??
+      firstImage?.postImageUrl ??
+      firstImage?.url ??
+      firstImage?.image) ??
+  item?.imageUrl ??
+  item?.recipeImage ??
+  "/assets/images/oatmeal.svg";
+
+  console.log("카드 item id:", item.id);
+console.log("카드 images:", item.images);
+console.log("카드 최종 이미지:", recipeImage);
+
   const profileImage = item?.profileImage ?? "/assets/images/pinggu.svg";
   const recipeName = item?.recipeName ?? item?.recipeTitle ?? "요리명 없음";
 

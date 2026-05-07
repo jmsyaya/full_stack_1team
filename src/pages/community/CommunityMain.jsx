@@ -99,11 +99,13 @@ const CommunityMain = () => {
       nickname: String(nicknameRaw).trim() || "익명",
       level: raw?.author?.level ?? raw?.level ?? raw?.authorLevel ?? 1,
       images:
-        raw?.images?.length > 0
-          ? raw.images
-          : raw?.imageUrl
-            ? [raw.imageUrl]
-            : [],
+        Array.isArray(raw?.postImage) && raw.postImage.length > 0
+          ? raw.postImage.map((img) => img.imageUrl).filter(Boolean)
+          : Array.isArray(raw?.images) && raw.images.length > 0
+            ? raw.images
+            : raw?.imageUrl
+              ? [raw.imageUrl]
+              : [],
       likes: raw?.likes ?? raw?.likeCount ?? 0,
       liked: raw?.liked ?? false,
       content: raw?.postContent ?? raw?.content ?? raw?.desc ?? "",
@@ -127,9 +129,67 @@ const CommunityMain = () => {
     };
   }, []);
 
+  const [postImageMap, setPostImageMap] = useState({});
+
+  useEffect(() => {
+    if (!Array.isArray(posts) || posts.length === 0) return;
+
+    const fetchPostImagesForCards = async () => {
+      const entries = await Promise.all(
+        posts.map(async (post) => {
+          const postId = post?.id;
+          if (!postId) return null;
+
+          try {
+            const images = await getPostImages(postId);
+
+            const imageUrls = Array.isArray(images)
+              ? images
+                  .slice()
+                  .sort((a, b) => (a.imageOrder ?? 0) - (b.imageOrder ?? 0))
+                  .map((img) =>
+                    typeof img === "string"
+                      ? img
+                      : img.imageUrl ??
+                        img.postImageUrl ??
+                        img.url ??
+                        img.image ??
+                        img.imagePath ??
+                        img.postImagePath,
+                  )
+                  .filter(Boolean)
+              : [];
+
+            return [postId, imageUrls];
+          } catch (error) {
+            console.error("카드 이미지 조회 실패:", postId, error);
+            return [postId, []];
+          }
+        }),
+      );
+
+      const nextMap = Object.fromEntries(entries.filter(Boolean));
+      setPostImageMap(nextMap);
+    };
+
+    fetchPostImagesForCards();
+  }, [posts]);
+
   const allItems = useMemo(
-    () => (posts ?? []).map(normalizeFromStore),
-    [posts, normalizeFromStore],
+    () =>
+      (posts ?? []).map((raw) => {
+        const item = normalizeFromStore(raw);
+        const uploadedImages = postImageMap[item.id] ?? [];
+
+        return {
+          ...item,
+          images:
+            uploadedImages.length > 0
+              ? uploadedImages
+              : item.images ?? [],
+        };
+      }),
+    [posts, normalizeFromStore, postImageMap],
   );
 
   const buildPostForModal = useCallback((item) => {
