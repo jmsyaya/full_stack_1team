@@ -19,9 +19,7 @@ const AddIngredientDetailModal = ({ onClose, onSubmit }) => {
   const handleSubmit = () => {
     if (!name) return alert("재료명을 입력해주세요");
 
-    onSubmit([
-      { name, category, quantity, expiredAt }
-    ]);
+    onSubmit([{ name, category, quantity, expiredAt }]);
 
     onClose();
   };
@@ -29,6 +27,9 @@ const AddIngredientDetailModal = ({ onClose, onSubmit }) => {
   return (
     <S.ModalOverlay>
       <S.ModalContent>
+        <S.ModalTopBar>
+          <S.ModalCloseButton onClick={onClose}>×</S.ModalCloseButton>
+        </S.ModalTopBar>
         <S.ModalBody>
           <S.ModalTitle>재료 추가</S.ModalTitle>
 
@@ -51,9 +52,7 @@ const AddIngredientDetailModal = ({ onClose, onSubmit }) => {
                 <option key={cat}>{cat}</option>
               ))}
             </select>
-            <span style={{ fontSize: "20px" }}>
-              {CATEGORY_ICONS[category]}
-            </span>
+            <span style={{ fontSize: "20px" }}>{CATEGORY_ICONS[category]}</span>
           </S.SelectedRow>
 
           <S.SelectedRow>
@@ -76,9 +75,11 @@ const AddIngredientDetailModal = ({ onClose, onSubmit }) => {
           </S.SelectedRow>
 
           <S.ModalFooter>
-            <S.AddButton onClick={handleSubmit}>
-              재료 추가
-            </S.AddButton>
+            <S.ModalButtonGroup>
+              <S.CancelButton onClick={onClose}>취소</S.CancelButton>
+
+              <S.AddButton onClick={handleSubmit}>재료 추가</S.AddButton>
+            </S.ModalButtonGroup>
           </S.ModalFooter>
         </S.ModalBody>
       </S.ModalContent>
