@@ -9,7 +9,7 @@ const S = {};
 
 S.FridgeHeaderSection = styled.div`
   width: 100%;
-  background-color: #FFF9F5;
+  background-color: #fff9f5;
 `;
 
 S.FridgeHeaderInner = styled.div`
@@ -38,7 +38,7 @@ S.FridgeTitle = styled.h2`
 S.AddButton = styled.button`
   width: 298px;
   height: 56px;
-  border: 1px solid #FF4D26;
+  border: 1px solid #ff4d26;
   border-radius: 5px;
   background-color: transparent;
   ${flexCenter}
@@ -52,7 +52,7 @@ S.AddButton = styled.button`
 S.LayoutAddButton = styled.button`
   width: 87px;
   height: 36px;
-  border: 1px solid #FF4D26;
+  border: 1px solid #ff4d26;
   border-radius: 5px;
   background-color: transparent;
   ${flexCenter}
@@ -114,7 +114,7 @@ S.BannerTitle = styled.h3`
   margin-bottom: 18px;
 
   span {
-    color: #FF4E37;
+    color: #ff4e37;
   }
 `;
 
@@ -129,9 +129,9 @@ S.BannerButton = styled.button`
   transition: 0.2s;
 
   &:hover {
-    background: #FF4E37;
+    background: #ff4e37;
     color: white;
-    border-color: #FF4E37;
+    border-color: #ff4e37;
   }
 `;
 
@@ -150,7 +150,7 @@ S.FridgeHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: #FFF9F5;
+  background-color: #fff9f5;
 `;
 
 S.FridgeButtonGroup = styled.div`
@@ -183,10 +183,8 @@ S.LayoutCategoryTab = styled.button`
   font-size: 15.8px;
   font-weight: 500;
   cursor: pointer;
-  background-color: ${({ $active }) =>
-    $active ? "#FF6B4A" : "#E0E0E0"};
-  color: ${({ $active }) =>
-    $active ? "#FFFFFF" : "#777777"};
+  background-color: ${({ $active }) => ($active ? "#FF6B4A" : "#E0E0E0")};
+  color: ${({ $active }) => ($active ? "#FFFFFF" : "#777777")};
 `;
 
 S.TopInfoRow = styled.div`
@@ -234,10 +232,9 @@ S.CardStyle = styled.div`
   border-radius: 10px;
   background-color: #fff;
   box-sizing: border-box;
-  border: 2px solid
-    ${({ $active }) => ($active ? "#FF4E37" : "#E9E9EC")};
+  border: 2px solid ${({ $active }) => ($active ? "#FF4E37" : "#E9E9EC")};
 
-  cursor: ${({ deleteMode }) => deleteMode ? "pointer" : "default"};
+  cursor: ${({ deleteMode }) => (deleteMode ? "pointer" : "default")};
 
   &:hover ${S.HoverInfo} {
     opacity: 1;
@@ -261,8 +258,8 @@ S.DeleteBadge = styled.div`
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  border: 2px solid #FF4E37;
-  background-color: ${({ $active }) => $active ? "#FF4E37" : "#fff"};
+  border: 2px solid #ff4e37;
+  background-color: ${({ $active }) => ($active ? "#FF4E37" : "#fff")};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -272,8 +269,7 @@ S.DeleteBadge = styled.div`
 
 S.CardTextStyle = styled.p`
   font-size: ${({ theme }) => theme.FONT_SIZE.h8};
-  font-weight: ${({ theme }) =>
-    theme.FONT_WEIGHT.PRETENDARD.LIGHT};
+  font-weight: ${({ theme }) => theme.FONT_WEIGHT.PRETENDARD.LIGHT};
 `;
 
 S.IconStyle = styled.div`
@@ -331,13 +327,10 @@ S.CategoryTab = styled.button`
   height: 64px;
   border: none;
   ${flexCenter}
-  background-color: ${({ $active }) =>
-    $active ? "#FFFFFF" : "#DDDDDD"};
-  color: ${({ $active }) =>
-    $active ? "#FF4E37" : "#898989"};
+  background-color: ${({ $active }) => ($active ? "#FFFFFF" : "#DDDDDD")};
+  color: ${({ $active }) => ($active ? "#FF4E37" : "#898989")};
   font-size: ${({ theme }) => theme.FONT_SIZE.h6};
-  font-weight: ${({ theme }) =>
-    theme.FONT_WEIGHT.PRETENDARD.MEDIUM};
+  font-weight: ${({ theme }) => theme.FONT_WEIGHT.PRETENDARD.MEDIUM};
   cursor: pointer;
   transition: all 0.2s ease;
 `;
@@ -375,7 +368,7 @@ S.SelectedRow = styled.div`
 `;
 
 S.SelectedSection = styled.div`
-  border-top: 1px solid #E9E9EC;
+  border-top: 1px solid #e9e9ec;
   padding-top: 16px;
 `;
 
@@ -409,7 +402,7 @@ S.FormInput = styled.input`
   font-size: 14px;
 
   &:focus {
-    border-color: #FF4E37;
+    border-color: #ff4e37;
     outline: none;
   }
 `;
@@ -434,7 +427,7 @@ S.ModalContent = styled.div`
 S.AddButton = styled.button`
   width: 100%;
   height: 50px;
-  background: #FF4E37;
+  background: #ff4e37;
   color: white;
   border-radius: 10px;
   font-weight: 600;
@@ -443,6 +436,47 @@ S.AddButton = styled.button`
 
   &:hover {
     background: #e8432e;
+  }
+`;
+
+S.ModalTopBar = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+`;
+
+S.ModalCloseButton = styled.button`
+  border: none;
+  background: transparent;
+  font-size: 26px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #555;
+  line-height: 1;
+
+  &:hover {
+    color: #ff4e37;
+  }
+`;
+
+S.ModalButtonGroup = styled.div`
+  width: 100%;
+  display: flex;
+  gap: 10px;
+`;
+
+S.CancelButton = styled.button`
+  width: 100%;
+  height: 50px;
+  background: #eeeeee;
+  color: #444;
+  border-radius: 10px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+
+  &:hover {
+    background: #dddddd;
   }
 `;
 
