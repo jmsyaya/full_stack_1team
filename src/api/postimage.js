@@ -27,14 +27,14 @@ export const createPostImage = async (postId, imageUrl) => {
         {
           imageUrl,
           imageOrder: 0,
-        }
-      ]
+        },
+      ],
     }),
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => null)
-    console.error("게시글 이미지 등록 에러 응답:", errorData)
+    const errorData = await response.json().catch(() => null);
+    console.error("게시글 이미지 등록 에러 응답:", errorData);
     throw new Error("게시글 이미지 등록 실패");
   }
 
@@ -42,10 +42,12 @@ export const createPostImage = async (postId, imageUrl) => {
   return text ? JSON.parse(text) : null;
 };
 
-
-export const createPostImageFile = async (postId, imageFile) => {
+export const createPostImageFiles = async (postId, imageFiles) => {
   const formData = new FormData();
-  formData.append("image", imageFile);
+
+  imageFiles.forEach((file) => {
+    formData.append("images", file);
+  });
 
   const response = await fetch(`${BASE_URL}/postimage/${postId}/upload`, {
     method: "POST",
@@ -72,16 +74,16 @@ export const replacePostImages = async (postId, images) => {
     },
     credentials: "include",
     body: JSON.stringify({
-      images
-    })
-  })
+      images,
+    }),
+  });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => null)
-    console.error("게시글 이미지 교체 에러 응답:", errorData)
-    throw new Error("게시글 이미지 교체 실패")
+    const errorData = await response.json().catch(() => null);
+    console.error("게시글 이미지 교체 에러 응답:", errorData);
+    throw new Error("게시글 이미지 교체 실패");
   }
 
-  const text = await response.text()
+  const text = await response.text();
   return text ? JSON.parse(text) : null;
-}
+};

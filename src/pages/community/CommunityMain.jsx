@@ -23,7 +23,7 @@ import {
   deleteSelectedComments as deleteSelectedCommentsApi,
 } from "../../api/comment";
 import {
-  createPostImageFile,
+  createPostImageFiles,
   getPostImages,
   replacePostImages,
 } from "../../api/postimage";
@@ -591,37 +591,87 @@ const CommunityMain = () => {
     async (postId, index, fileOrUrl) => {
       requireLogin(async () => {
         try {
-          let uploadedUrl = "";
+          let nextImages = [];
 
-          // 1. 파일이면 S3 업로드해서 URL 받기
-          if (fileOrUrl instanceof File) {
-            const uploadResult = await createPostImageFile(postId, fileOrUrl);
-            uploadedUrl = uploadResult?.imageUrl;
-          } else {
-            uploadedUrl = fileOrUrl;
+          // 1. 여러 파일 배열이면 S3 다중 업로드
+          // - MyPostModal에서 multiple 파일 선택 시 files 배열이 넘어옴
+          // - 업로드 결과로 받은 S3 이미지 URL 배열을 DB 저장용 형태로 가공
+          if (Array.isArray(fileOrUrl)) {
+            const uploadResult = await createPostImageFiles(postId, fileOrUrl);
+            const uploadedImages = uploadResult?.images ?? [];
+
+            nextImages = uploadedImages
+              .map((img, idx) => ({
+                imageUrl:
+                  img.imageUrl ??
+                  img.postImageUrl ??
+                  img.url ??
+                  img.image ??
+                  img.imagePath ??
+                  img.postImagePath,
+                imageOrder: img.imageOrder ?? idx,
+              }))
+              .filter((img) => img.imageUrl);
           }
 
-          if (!uploadedUrl) {
-            throw new Error("업로드된 이미지 URL이 없습니다.");
-          }
+          // 2. 단일 파일이면 S3 업로드 후 기존 이미지 배열의 해당 index만 교체
+          // - 기존 단일 이미지 수정 흐름도 유지하기 위한 방어 코드
+          // - createPostImageFiles에 배열 형태로 감싸서 넘김
+          else if (fileOrUrl instanceof File) {
+            const uploadResult = await createPostImageFiles(postId, [
+              fileOrUrl,
+            ]);
+            const uploadedImage = uploadResult?.images?.[0];
+            const uploadedUrl =
+              uploadedImage?.imageUrl ??
+              uploadedImage?.postImageUrl ??
+              uploadedImage?.url ??
+              uploadedImage?.image ??
+              uploadedImage?.imagePath ??
+              uploadedImage?.postImagePath;
 
-          // 2. 기존 이미지 배열 가져오기
-          const prevImages = selectedPost?.images ?? [];
-          const nextImages = [...prevImages];
+            if (!uploadedUrl) {
+              throw new Error("업로드된 이미지 URL이 없습니다.");
+            }
 
-          // 3. 선택한 index의 이미지만 새 URL로 교체
-          nextImages[index] = uploadedUrl;
+            const prevImages = selectedPost?.images ?? [];
+            const copiedImages = [...prevImages];
 
-          // 4. DB에는 전체 교체 API로 저장
-          await replacePostImages(
-            postId,
-            nextImages.map((imageUrl, idx) => ({
+            copiedImages[index] = uploadedUrl;
+
+            nextImages = copiedImages.map((imageUrl, idx) => ({
               imageUrl,
               imageOrder: idx,
-            })),
-          );
+            }));
+          }
+
+          // 3. URL 문자열이면 S3 업로드 없이 해당 index만 교체
+          // - 이미 업로드된 URL을 넘겨받는 경우를 대비한 처리
+          else {
+            const uploadedUrl = fileOrUrl;
+
+            if (!uploadedUrl) {
+              throw new Error("업로드된 이미지 URL이 없습니다.");
+            }
+
+            const prevImages = selectedPost?.images ?? [];
+            const copiedImages = [...prevImages];
+
+            copiedImages[index] = uploadedUrl;
+
+            nextImages = copiedImages.map((imageUrl, idx) => ({
+              imageUrl,
+              imageOrder: idx,
+            }));
+          }
+
+          // 4. DB에는 게시글 이미지 전체 교체 API로 저장
+          // - S3 업로드 API는 URL 생성/등록 역할
+          // - 최종 이미지 목록은 replacePostImages로 정리
+          await replacePostImages(postId, nextImages);
 
           // 5. 최신 이미지 다시 조회
+          // - DB에 저장된 imageOrder 기준으로 정렬하기 위해 재조회
           const images = await getPostImages(postId);
 
           const imageList = Array.isArray(images)
@@ -642,20 +692,20 @@ const CommunityMain = () => {
             : [];
 
           // 6. 모달 즉시 반영
+          // - 모달을 닫지 않아도 수정된 이미지가 바로 보이게 처리
           setSelectedPost((prev) => {
             if (!prev || prev.id !== postId) return prev;
-            return {
-              ...prev,
-              images: imageList,
-            };
+            return { ...prev, images: imageList };
           });
 
           // 7. 카드 썸네일도 즉시 반영
+          // - 피드 카드에서 첫 번째 이미지를 썸네일로 사용하므로 imageMap 갱신
           setPostImageMap((prev) => ({
             ...prev,
             [postId]: imageList,
           }));
 
+          // 8. 게시글 목록 최신화
           await fetchPosts();
         } catch (error) {
           console.error("게시글 이미지 수정 실패:", error);
