@@ -15,6 +15,41 @@ import { getCommentsByPostId } from "../../api/comment";
 
 const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
 
+// 날짜를 사용자가 보기 편한 형식으로 변환
+const formatPostDate = (dateValue) => {
+  if (!dateValue) return "";
+
+  const date = new Date(dateValue);
+
+  if (Number.isNaN(date.getTime())) return "";
+
+  return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`;
+};
+
+const formatRelativeTime = (dateValue) => {
+  if (!dateValue) return "";
+
+  const date = new Date(dateValue);
+
+  if (Number.isNaN(date.getTime())) return "";
+
+  const now = new Date();
+  const diffMs = now - date;
+  const diffSeconds = Math.floor(diffMs / 1000);
+  const diffMinutes = Math.floor(diffSeconds / 60);
+  const diffHours = Math.floor(diffMinutes / 60);
+  const diffDays = Math.floor(diffHours / 24);
+  const diffMonths = Math.floor(diffDays / 30);
+  const diffYears = Math.floor(diffDays / 365);
+
+  if (diffSeconds < 60) return "방금 전";
+  if (diffMinutes < 60) return `${diffMinutes}분 전`;
+  if (diffHours < 24) return `${diffHours}시간 전`;
+  if (diffDays < 30) return `${diffDays}일 전`;
+  if (diffMonths < 12) return `${diffMonths}개월 전`;
+  return `${diffYears}년 전`;
+};
+
 const SELECT_ICON_OFF = "/assets/icons/empty_check_dot.svg";
 const SELECT_ICON_ON = "/assets/icons/check_dot_filled.svg";
 
@@ -578,7 +613,11 @@ const MyPostModal = ({
 
                   <S.LikeBadge>
                     <S.HeartIcon
-                      src={`${process.env.PUBLIC_URL}/assets/icons/heart.svg`}
+                      src={
+                        post?.liked
+                          ? `${process.env.PUBLIC_URL}/assets/icons/heart.svg`
+                          : `${process.env.PUBLIC_URL}/assets/icons/empty_heart.svg`
+                      }
                       alt="좋아요"
                     />
                     <span>{post?.likes ?? 0}</span>
@@ -678,7 +717,7 @@ const MyPostModal = ({
               )}
             </S.TopRow>
 
-            <S.DateText>{post?.createdAt ?? ""}</S.DateText>
+            <S.DateText>{formatPostDate(post?.createdAt)}</S.DateText>
 
             {/* 게시글 수정 모드 */}
             {isPostEditing ? (
@@ -894,7 +933,7 @@ const MyPostModal = ({
                             </S.CommentNickname>
 
                             <S.CommentMeta>
-                              <S.CommentTime>{c.createdAt}</S.CommentTime>
+                              <S.CommentTime>{formatRelativeTime(c.createdAt)}</S.CommentTime>
                               {mine && <S.MineTag>나</S.MineTag>}
                             </S.CommentMeta>
                           </S.CommentLeft>

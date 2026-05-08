@@ -14,6 +14,41 @@ import { getCommentsByPostId } from "../../api/comment";
 
 const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
 
+// 날짜를 사용자가 보기 편한 형식으로 변환
+const formatPostDate = (dateValue) => {
+  if (!dateValue) return "";
+
+  const date = new Date(dateValue);
+
+  if (Number.isNaN(date.getTime())) return "";
+
+  return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`;
+};
+
+const formatRelativeTime = (dateValue) => {
+  if (!dateValue) return "";
+
+  const date = new Date(dateValue);
+
+  if (Number.isNaN(date.getTime())) return "";
+
+  const now = new Date();
+  const diffMs = now - date;
+  const diffSeconds = Math.floor(diffMs / 1000);
+  const diffMinutes = Math.floor(diffSeconds / 60);
+  const diffHours = Math.floor(diffMinutes / 60);
+  const diffDays = Math.floor(diffHours / 24);
+  const diffMonths = Math.floor(diffDays / 30);
+  const diffYears = Math.floor(diffDays / 365);
+
+  if (diffSeconds < 60) return "방금 전";
+  if (diffMinutes < 60) return `${diffMinutes}분 전`;
+  if (diffHours < 24) return `${diffHours}시간 전`;
+  if (diffDays < 30) return `${diffDays}일 전`;
+  if (diffMonths < 12) return `${diffMonths}개월 전`;
+  return `${diffYears}년 전`;
+};
+
 const CommunityPostModal = ({
   open,
   onClose,
@@ -41,7 +76,7 @@ const CommunityPostModal = ({
         : Array.isArray(post?.postImage)
           ? post.postImage
           : [];
-          
+
     return rawImages
       .slice()
       .sort((a, b) => (a.imageOrder ?? 0) - (b.imageOrder ?? 0))
@@ -401,7 +436,7 @@ const CommunityPostModal = ({
                   <S.HeartIcon
                     src={
                       post?.liked
-                        ? `${process.env.PUBLIC_URL}/assets/icons/full_heart.svg`
+                        ? `${process.env.PUBLIC_URL}/assets/icons/heart.svg`
                         : `${process.env.PUBLIC_URL}/assets/icons/empty_heart.svg`
                     }
                     alt="좋아요"
@@ -411,7 +446,7 @@ const CommunityPostModal = ({
               </S.MetaRight>
             </S.TopRow>
 
-            <S.DateText>{post?.createdAt ?? ""}</S.DateText>
+            <S.DateText>{formatPostDate(post?.createdAt)}</S.DateText>
 
             <S.Title>{post?.recipeTitle ?? "제목"}</S.Title>
             <S.Desc ref={descRef} $expanded={isExpanded}>
@@ -479,7 +514,7 @@ const CommunityPostModal = ({
                             </S.CommentNickname>
 
                             <S.CommentMeta>
-                              <S.CommentTime>{c.createdAt}</S.CommentTime>
+                              <S.CommentTime>{formatRelativeTime(c.createdAt)}</S.CommentTime>
                               {mine && <S.MineTag>나</S.MineTag>}
                             </S.CommentMeta>
                           </S.CommentLeft>
