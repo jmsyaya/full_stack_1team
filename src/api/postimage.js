@@ -55,10 +55,33 @@ export const createPostImageFile = async (postId, imageFile) => {
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => null);
-    console.error("게시글 이미지 S3 업로드 에러 응답:", errorData);
+    console.error("게시글 이미지 S3 다중 업로드 에러 응답:", errorData);
     throw new Error("게시글 이미지 업로드 실패");
   }
 
   const text = await response.text();
   return text ? JSON.parse(text) : null;
 };
+
+// 게시글 이미지 전체 교체
+export const replacePostImages = async (postId, images) => {
+  const response = await fetch(`${BASE_URL}/postimage/${postId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify({
+      images
+    })
+  })
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null)
+    console.error("게시글 이미지 교체 에러 응답:", errorData)
+    throw new Error("게시글 이미지 교체 실패")
+  }
+
+  const text = await response.text()
+  return text ? JSON.parse(text) : null;
+}
