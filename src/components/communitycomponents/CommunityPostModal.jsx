@@ -35,11 +35,28 @@ const CommunityPostModal = ({
   const [draftText, setDraftText] = useState("");
 
   const images = useMemo(() => {
-    return (post?.postImage ?? [])
+    const rawImages =
+      Array.isArray(post?.images) && post.images.length > 0
+        ? post.images
+        : Array.isArray(post?.postImage)
+          ? post.postImage
+          : [];
+          
+    return rawImages
       .slice()
-      .sort((a, b) => a.imageOrder - b.imageOrder)
-      .map((img) => img.imageUrl)
-  }, [post?.postImage]);
+      .sort((a, b) => (a.imageOrder ?? 0) - (b.imageOrder ?? 0))
+      .map((img) =>
+        typeof img === "string"
+          ? img
+          : (img.imageUrl ??
+            img.postImageUrl ??
+            img.url ??
+            img.image ??
+            img.imagePath ??
+            img.postImagePath),
+      )
+      .filter(Boolean);
+  }, [post?.images, post?.postImage]);
 
   const hasImages = images.length > 0;
   const safeIndex = clamp(activeIndex, 0, Math.max(0, images.length - 1));

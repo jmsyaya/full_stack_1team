@@ -22,7 +22,11 @@ import {
   deleteAllCommentsByPostId as deleteAllCommentsByPostIdApi,
   deleteSelectedComments as deleteSelectedCommentsApi,
 } from "../../api/comment";
-import { getPostImages } from "../../api/postimage";
+import {
+  createPostImageFile,
+  getPostImages,
+  replacePostImages,
+} from "../../api/postimage";
 
 const CommunityMain = () => {
   const navigate = useNavigate();
@@ -150,12 +154,12 @@ const CommunityMain = () => {
                   .map((img) =>
                     typeof img === "string"
                       ? img
-                      : img.imageUrl ??
+                      : (img.imageUrl ??
                         img.postImageUrl ??
                         img.url ??
                         img.image ??
                         img.imagePath ??
-                        img.postImagePath,
+                        img.postImagePath),
                   )
                   .filter(Boolean)
               : [];
@@ -184,9 +188,7 @@ const CommunityMain = () => {
         return {
           ...item,
           images:
-            uploadedImages.length > 0
-              ? uploadedImages
-              : item.images ?? [],
+            uploadedImages.length > 0 ? uploadedImages : (item.images ?? []),
         };
       }),
     [posts, normalizeFromStore, postImageMap],
@@ -566,23 +568,102 @@ const CommunityMain = () => {
     [requireLogin, handleCloseModals, fetchPosts],
   );
 
-  const handleEditPostImage = useCallback(
-    (postId, index, fileOrUrl) => {
-      requireLogin(() => {
-        const nextUrl =
-          typeof fileOrUrl === "string"
-            ? fileOrUrl
-            : URL.createObjectURL(fileOrUrl);
+  // const handleEditPostImage = useCallback(
+  //   (postId, index, fileOrUrl) => {
+  //     requireLogin(() => {
+  //       const nextUrl =
+  //         typeof fileOrUrl === "string"
+  //           ? fileOrUrl
+  //           : URL.createObjectURL(fileOrUrl);
 
-        setSelectedPost((prev) => {
-          if (!prev || prev.id !== postId) return prev;
-          const nextImages = [...(prev.images ?? [])];
-          nextImages[index] = nextUrl;
-          return { ...prev, images: nextImages };
-        });
+  //       setSelectedPost((prev) => {
+  //         if (!prev || prev.id !== postId) return prev;
+  //         const nextImages = [...(prev.images ?? [])];
+  //         nextImages[index] = nextUrl;
+  //         return { ...prev, images: nextImages };
+  //       });
+  //     });
+  //   },
+  //   [requireLogin],
+  // );
+
+  const handleEditPostImage = useCallback(
+    async (postId, index, fileOrUrl) => {
+      requireLogin(async () => {
+        try {
+          let uploadedUrl = "";
+
+          // 1. 파일이면 S3 업로드해서 URL 받기
+          if (fileOrUrl instanceof File) {
+            const uploadResult = await createPostImageFile(postId, fileOrUrl);
+            uploadedUrl = uploadResult?.imageUrl;
+          } else {
+            uploadedUrl = fileOrUrl;
+          }
+
+          if (!uploadedUrl) {
+            throw new Error("업로드된 이미지 URL이 없습니다.");
+          }
+
+          // 2. 기존 이미지 배열 가져오기
+          const prevImages = selectedPost?.images ?? [];
+          const nextImages = [...prevImages];
+
+          // 3. 선택한 index의 이미지만 새 URL로 교체
+          nextImages[index] = uploadedUrl;
+
+          // 4. DB에는 전체 교체 API로 저장
+          await replacePostImages(
+            postId,
+            nextImages.map((imageUrl, idx) => ({
+              imageUrl,
+              imageOrder: idx,
+            })),
+          );
+
+          // 5. 최신 이미지 다시 조회
+          const images = await getPostImages(postId);
+
+          const imageList = Array.isArray(images)
+            ? images
+                .slice()
+                .sort((a, b) => (a.imageOrder ?? 0) - (b.imageOrder ?? 0))
+                .map((img) =>
+                  typeof img === "string"
+                    ? img
+                    : (img.imageUrl ??
+                      img.postImageUrl ??
+                      img.url ??
+                      img.image ??
+                      img.imagePath ??
+                      img.postImagePath),
+                )
+                .filter(Boolean)
+            : [];
+
+          // 6. 모달 즉시 반영
+          setSelectedPost((prev) => {
+            if (!prev || prev.id !== postId) return prev;
+            return {
+              ...prev,
+              images: imageList,
+            };
+          });
+
+          // 7. 카드 썸네일도 즉시 반영
+          setPostImageMap((prev) => ({
+            ...prev,
+            [postId]: imageList,
+          }));
+
+          await fetchPosts();
+        } catch (error) {
+          console.error("게시글 이미지 수정 실패:", error);
+          alert(error.message);
+        }
       });
     },
-    [requireLogin],
+    [requireLogin, selectedPost?.images, fetchPosts],
   );
 
   // 게시글 댓글 전체 삭제

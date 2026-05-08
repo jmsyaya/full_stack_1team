@@ -12,26 +12,26 @@ const NEW_DAYS = 3;
 const POPULAR_DAYS = 30;
 const POPULAR_TOP_N = 8;
 
- // ===== 날짜 파싱 헬퍼 =====
-  const parseDate = (v) => {
-    if (!v) return null;
+// ===== 날짜 파싱 헬퍼 =====
+const parseDate = (v) => {
+  if (!v) return null;
 
-    if (typeof v === "string") {
-      const normalized = v.replace(/\./g, "-").replace(/\s+/g, "").slice(0, 10);
-      const d1 = new Date(v);
-      if (!Number.isNaN(d1.getTime())) return d1;
+  if (typeof v === "string") {
+    const normalized = v.replace(/\./g, "-").replace(/\s+/g, "").slice(0, 10);
+    const d1 = new Date(v);
+    if (!Number.isNaN(d1.getTime())) return d1;
 
-      const d2 = new Date(normalized);
-      if (!Number.isNaN(d2.getTime())) return d2;
-    }
+    const d2 = new Date(normalized);
+    if (!Number.isNaN(d2.getTime())) return d2;
+  }
 
-    const d = new Date(v);
-    if (Number.isNaN(d.getTime())) return null;
-    return d;
-  };
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return null;
+  return d;
+};
 
-  //  날짜 짧게 가공 (닉네임 안 보이던 문제 해결 핵심)
-  const getRelativeTime = (date) => {
+//  날짜 짧게 가공 (닉네임 안 보이던 문제 해결 핵심)
+const getRelativeTime = (date) => {
   const now = new Date();
   const target = new Date(date);
 
@@ -63,9 +63,9 @@ const PostCard = ({
   allItems = [],
   onLikeToggle,
 }) => {
-  const liked = item?.liked ?? false
+  const liked = item?.liked ?? false;
   console.log("PostCard liked", item.id, item.liked, liked);
-  const likeCount = item?.likes ?? 0
+  const likeCount = item?.likes ?? 0;
 
   const handleLikeToggle = (e) => {
     e.stopPropagation();
@@ -73,25 +73,23 @@ const PostCard = ({
   };
 
   // ===== 기본 데이터 =====
-const firstImage =
-  item?.images?.[0] ??
-  item?.postImage?.[0] ??
-  item?.postImages?.[0];
+  const firstImage =
+    item?.images?.[0] ?? item?.postImage?.[0] ?? item?.postImages?.[0];
 
-const recipeImage =
-  (typeof firstImage === "string"
-    ? firstImage
-    : firstImage?.imageUrl ??
-      firstImage?.postImageUrl ??
-      firstImage?.url ??
-      firstImage?.image) ??
-  item?.imageUrl ??
-  item?.recipeImage ??
-  "/assets/images/oatmeal.svg";
+  const recipeImage =
+    (typeof firstImage === "string"
+      ? firstImage
+      : (firstImage?.imageUrl ??
+        firstImage?.postImageUrl ??
+        firstImage?.url ??
+        firstImage?.image)) ??
+    item?.imageUrl ??
+    item?.recipeImage ??
+    "/assets/images/oatmeal.svg";
 
   console.log("카드 item id:", item.id);
-console.log("카드 images:", item.images);
-console.log("카드 최종 이미지:", recipeImage);
+  console.log("카드 images:", item.images);
+  console.log("카드 최종 이미지:", recipeImage);
 
   const profileImage = item?.profileImage ?? "/assets/images/pinggu.svg";
   const recipeName = item?.recipeName ?? item?.recipeTitle ?? "요리명 없음";
@@ -102,20 +100,15 @@ console.log("카드 최종 이미지:", recipeImage);
   const level = item?.level ?? 1;
   const xp = item?.xp ?? 0;
 
-  
-
   const createdAtText = useMemo(() => {
-    const d = parseDate(item?.createdAt)
-    if(!d) return "방금 전"
-    return getRelativeTime(d)
+    const d = parseDate(item?.createdAt);
+    if (!d) return "방금 전";
+    return getRelativeTime(d);
   }, [item?.createdAt]);
 
-  const desc =
-    item?.desc ??
-    item?.content ??
-    "내용이 없습니다.";
+  const desc = item?.desc ?? item?.content ?? "내용이 없습니다.";
 
-   const ingredientsText = useMemo(() => {
+  const ingredientsText = useMemo(() => {
     if (!Array.isArray(item?.ingredients) || item.ingredients.length === 0) {
       return "";
     }
@@ -204,11 +197,9 @@ console.log("카드 최종 이미지:", recipeImage);
             </S.BadgeChip>
             <S.BadgeChip2>XP {xp}</S.BadgeChip2>
           </S.MetaCenter>
-
-          
         </S.CardMetaRow>
 
-        {ingredientsText && (<S.CardDesc>{ingredientsText}</S.CardDesc>)}
+        {ingredientsText && <S.CardDesc>{ingredientsText}</S.CardDesc>}
         <S.CardDesc>{desc}</S.CardDesc>
       </S.CardContentArea>
     </S.CarouselCard>

@@ -37,11 +37,29 @@ const MyPostModal = ({
   // 이미지/댓글
   const [activeIndex, setActiveIndex] = useState(0);
   const images = useMemo(() => {
-  return (post?.postImage ?? [])
-    .slice()
-    .sort((a, b) => a.imageOrder - b.imageOrder)
-    .map((img) => img.imageUrl);
-}, [post?.postImage]);
+    const rawImages =
+      Array.isArray(post?.images) && post.images.length > 0
+        ? post.images
+        : Array.isArray(post?.postImage)
+          ? post.postImage
+          : [];
+
+    return rawImages
+      .slice()
+      .sort((a, b) => (a.imageOrder ?? 0) - (b.imageOrder ?? 0))
+      .map((img) =>
+        typeof img === "string"
+          ? img
+          : (img.imageUrl ??
+            img.postImageUrl ??
+            img.url ??
+            img.image ??
+            img.imagePath ??
+            img.postImagePath),
+      )
+      .filter(Boolean);
+  }, [post?.images, post?.postImage]);
+
   const [comments, setComments] = useState([]);
   const hasImages = images.length > 0;
   const safeIndex = clamp(activeIndex, 0, Math.max(0, images.length - 1));
@@ -310,10 +328,10 @@ const MyPostModal = ({
 
   const handlePickImage = useCallback(
     (e) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
+      const files = Array.from(e.target.files ?? []);
+      if (files.length === 0) return;
 
-      onEditPostImage?.(post?.id, safeIndex, file);
+      onEditPostImage?.(post?.id, safeIndex, files);
       e.target.value = "";
     },
     [onEditPostImage, post?.id, safeIndex],
@@ -483,7 +501,9 @@ const MyPostModal = ({
         <input
           ref={fileRef}
           type="file"
+          multiple
           accept="image/*"
+          multiple
           style={{ display: "none" }}
           onChange={handlePickImage}
         />
